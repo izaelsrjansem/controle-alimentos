@@ -174,6 +174,7 @@ dialog .bd{padding:0 18px 18px;display:flex;flex-direction:column;gap:12px}
 
 /* ---------- telas ---------- */
 .login{min-height:100vh;display:grid;place-items:center;padding-block:24px}
+@media (max-width:720px){.login{place-items:start center;padding-top:calc(48px + env(safe-area-inset-top,0px))}}
 .login .panel{width:min(420px,100%);padding:26px;box-shadow:0 20px 60px rgba(0,0,0,.5),var(--glow)}
 .login h1{font-size:1.6rem}
 .erro{padding:11px 14px;border-radius:10px;background:var(--bad-soft);color:var(--bad);font-size:.88rem;border:1px solid rgba(251,113,133,.3)}
@@ -258,3 +259,16 @@ code{font-family:var(--font-mono);font-size:.85em;color:var(--accent)}
 .log:first-child{border-top:0}
 .log time{font-family:var(--font-mono);font-size:.78rem;color:var(--accent);white-space:nowrap}
 .log .quem{color:var(--muted);font-size:.8rem}
+
+/* ---------- login: campos, olhinho da senha, lembrar ---------- */
+.campo{display:flex;flex-direction:column;gap:6px}
+.campo-senha{position:relative}
+.campo-senha input{padding-right:48px}
+.olho{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:40px;height:40px;display:grid;place-items:center;
+  background:none;border:0;border-radius:8px;color:var(--muted);cursor:pointer}
+.olho svg{width:20px;height:20px}
+.olho:hover,.olho[aria-pressed="true"]{color:var(--accent)}
+.lembrar{display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--muted);cursor:pointer;min-height:40px}
+.lembrar input{width:20px;height:20px;accent-color:var(--accent);flex:0 0 auto}
+.login .btn{min-height:48px;font-size:1rem;touch-action:manipulation}
+.login input{font-size:16px} /* abaixo de 16px o iPhone dá zoom no campo */
