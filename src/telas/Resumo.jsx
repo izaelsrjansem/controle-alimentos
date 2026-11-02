@@ -15,6 +15,7 @@ export default function Resumo({ dados, ir }) {
   const [aviso, setAviso] = useState(null);
   const [apagando, setApagando] = useState(null);
   const [importando, setImportando] = useState(false);
+  const [aberta, setAberta] = useState(null);
 
   const prod = useMemo(() => new Map(produtos.map((p) => [p.id, p])), [produtos]);
   const doMes = compras.filter((c) => c.data.startsWith(mes));
@@ -157,10 +158,10 @@ export default function Resumo({ dados, ir }) {
 
       <div className="panel" id="compras-do-mes">
         <h2>Compras de {nomeMes(mes)}</h2>
-        <p className="note">Cada linha é um lançamento inteiro. "Apagar" remove a compra com todos os itens dela.</p>
+        <p className="note">Cada linha é um lançamento inteiro. "Ver itens" abre a compra para excluir um item; "Apagar" remove a compra com todos os itens dela.</p>
         <div className="tablewrap"><table>
           <thead><tr><th>Data</th><th>Mercado</th><th className="r">Itens</th><th className="r">Desconto</th><th className="r">Pago</th><th /></tr></thead>
-          <tbody>{doMes.map((c) => (
+          <tbody>{doMes.map((c) => [
             <tr key={c.id} className={repetidas.has(c.id) ? "duvida" : ""}>
               <td className="num">{dataBR(c.data)}</td>
               <td>{c.mercado}
@@ -171,10 +172,69 @@ export default function Resumo({ dados, ir }) {
               <td className="r money"><b>{brl(c.total_pago)}</b></td>
               <td className="r">{apagando === c.id
                 ? <span className="row" style={{ justifyContent: "flex-end" }}><button className="btn" onClick={() => apagar(c)}>Confirmar</button><button className="btn ghost" onClick={() => setApagando(null)}>Cancelar</button></span>
-                : <button className="sair" onClick={() => setApagando(c.id)}>Apagar</button>}</td>
-            </tr>))}</tbody>
+                : <span className="row" style={{ justifyContent: "flex-end" }}>
+                    <button className="btn ghost" onClick={() => setAberta(aberta === c.id ? null : c.id)} aria-expanded={aberta === c.id}>{aberta === c.id ? "Fechar" : "Ver itens"}</button>
+                    <button className="sair" onClick={() => setApagando(c.id)}>Apagar compra</button></span>}</td>
+            </tr>,
+            aberta === c.id && <tr key={c.id + "-itens"}><td colSpan={6}>
+              <ItensDaCompra compra={c} linhas={precos.filter((r) => r.compra_id === c.id)} prod={prod}
+                aoMudar={(texto) => { setAviso({ tipo: "ok", texto }); dados.recarregar(); }} aoErro={(texto) => setAviso({ tipo: "erro", texto })} />
+            </td></tr>,
+          ])}</tbody>
         </table></div>
       </div>
     </>
+  );
+}
+
+/* ---------- Compra já lançada: excluir um item e recalcular o total ---------- */
+function ItensDaCompra({ compra, linhas, prod, aoMudar, aoErro }) {
+  const [excluindo, setExcluindo] = useState(null);
+  const [ocupado, setOcupado] = useState(false);
+
+  async function excluir(item) {
+    setOcupado(true);
+    const nome = prod.get(item.produto_id)?.nome ?? "Item";
+    const { error } = await supabase.from("compra_itens").delete().eq("id", item.id);
+    if (error) { setOcupado(false); setExcluindo(null); return aoErro("Não consegui excluir o item: " + error.message); }
+
+    const resto = linhas.filter((l) => l.id !== item.id);
+    if (!resto.length) {
+      // era o último item: a compra inteira deixa de existir
+      const { error: e2 } = await supabase.from("compras").delete().eq("id", compra.id);
+      setOcupado(false); setExcluindo(null);
+      if (e2) return aoErro("O item saiu, mas não consegui apagar a compra vazia: " + e2.message);
+      return aoMudar(`${nome} excluído. Era o último item, então a compra de ${dataBR(compra.data)} foi apagada.`);
+    }
+    const bruto = resto.reduce((s, l) => s + l.valor_total + l.desconto, 0);
+    const desc = resto.reduce((s, l) => s + l.desconto, 0);
+    const r2 = (v) => Math.round(v * 100) / 100;
+    const { error: e3 } = await supabase.from("compras")
+      .update({ total_bruto: r2(bruto), desconto: r2(desc), total_pago: r2(bruto - desc) }).eq("id", compra.id);
+    setOcupado(false); setExcluindo(null);
+    if (e3) return aoErro("O item saiu, mas não consegui atualizar o total da compra: " + e3.message);
+    aoMudar(`${nome} excluído da compra de ${dataBR(compra.data)}. Novo total: ${brl(bruto - desc)}.`);
+  }
+
+  if (!linhas.length) return <p className="empty">Esta compra não tem itens.</p>;
+  return (
+    <div className="tablewrap"><table className="revisao">
+      <thead><tr><th>Item</th><th>Marca</th><th>Embalagem</th><th className="r">Qtd</th><th className="r">R$ unit.</th><th className="r">Desc.</th><th className="r">Total</th><th /></tr></thead>
+      <tbody>{linhas.map((l) => (
+        <tr key={l.id}>
+          <td>{prod.get(l.produto_id)?.nome}</td>
+          <td>{l.marca ?? ""}</td>
+          <td>{l.embalagem ?? ""}</td>
+          <td className="r num">{num(l.quantidade)}</td>
+          <td className="r money">{brl(l.valor_unitario)}</td>
+          <td className="r money">{brl(l.desconto)}</td>
+          <td className="r money">{brl(l.valor_total)}</td>
+          <td className="r">{excluindo === l.id
+            ? <span className="row" style={{ justifyContent: "flex-end" }}>
+                <button className="btn" onClick={() => excluir(l)} disabled={ocupado}>Confirmar</button>
+                <button className="btn ghost" onClick={() => setExcluindo(null)} disabled={ocupado}>Cancelar</button></span>
+            : <button className="sair" onClick={() => setExcluindo(l.id)} disabled={ocupado}>Excluir</button>}</td>
+        </tr>))}</tbody>
+    </table></div>
   );
 }
