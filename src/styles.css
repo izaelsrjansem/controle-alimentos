@@ -362,3 +362,10 @@ code{font-family:var(--font-mono);font-size:.85em;color:var(--accent)}
   .resumo-numeros .lbl{font-size:.58rem}
   .resumo-fixo .btn{padding:10px 14px}
 }
+
+/* iPhone (Safari/Chrome): efeito de vidro no cabeçalho prende a barra "fixa" dentro dele.
+   No celular o cabeçalho fica sólido e rola junto com a página; só a barra de abas fica presa embaixo. */
+@media (max-width:720px){
+  header.top{position:relative;backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--surface-solid)}
+  header.top .wrap{padding-bottom:12px}
+}
