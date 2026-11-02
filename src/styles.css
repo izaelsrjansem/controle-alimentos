@@ -114,7 +114,7 @@ html,body{margin:0}
 .revisao tr.duvida td,table tr.duvida td{background:var(--warn-soft)}
 .revisao tr.fora td{opacity:.45}
 .revisao tr.fora input{text-decoration:line-through}
-.revisao tr.fora td:last-child{opacity:1}
+.revisao tr.fora td.acao{opacity:1}
 .fotos{display:flex;gap:8px;flex-wrap:wrap}
 .fotos img{height:110px;border-radius:6px;border:1px solid var(--line)}
 .carregando{color:var(--muted);padding:24px 0;text-align:center}

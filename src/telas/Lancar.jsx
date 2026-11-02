@@ -245,9 +245,10 @@ function Revisao({ dados, inicial, origem, fotos = [], aoSalvar }) {
 
       {lido && <p className="note">Item que não é do rancho (lençol, liquidificador, eletrônico...)? Toque em <b>Fora do rancho</b> na linha dele: o item não é lançado e o total é recalculado só com o que fica.</p>}
       <div className="tablewrap"><table className="revisao">
-        <thead><tr><th>Item</th><th>Marca</th><th>Categoria</th><th>Embalagem</th><th className="r">Tam.</th><th>Medida</th><th className="r">Qtd</th><th className="r">R$ unit.</th><th className="r">Desc.</th><th className="r">Total</th><th /></tr></thead>
+        <thead><tr>{lido && <th />}<th>Item</th><th>Marca</th><th>Categoria</th><th>Embalagem</th><th className="r">Tam.</th><th>Medida</th><th className="r">Qtd</th><th className="r">R$ unit.</th><th className="r">Desc.</th><th className="r">Total</th><th /></tr></thead>
         <tbody>{itens.map((l) => (
           <tr key={l.chave} className={l.fora ? "fora" : l.duvida ? "duvida" : ""}>
+            {lido && <td className="acao"><button className="btn ghost" type="button" style={{ whiteSpace: "nowrap" }} onClick={() => alternarFora(l.chave)}>{l.fora ? "Incluir de novo" : "Fora do rancho"}</button></td>}
             <td style={{ minWidth: 170 }}>{campo(l, "nome", { list: "lista-itens", onBlur: () => completar(l.chave), placeholder: "Arroz tipo 1" })}
               {l.descricao_cupom && <div className="note">{l.descricao_cupom}</div>}</td>
             <td style={{ minWidth: 100 }}>{campo(l, "marca")}</td>
@@ -259,9 +260,7 @@ function Revisao({ dados, inicial, origem, fotos = [], aoSalvar }) {
             <td style={{ width: 80 }}>{campo(l, "valor_unitario", { type: "number", step: "0.01", min: "0" })}</td>
             <td style={{ width: 70 }}>{campo(l, "desconto", { type: "number", step: "0.01", min: "0" })}</td>
             <td className="r money">{brl(l.valor_total)}</td>
-            <td>{lido
-              ? <button className="btn ghost" type="button" style={{ whiteSpace: "nowrap" }} onClick={() => alternarFora(l.chave)}>{l.fora ? "Incluir de novo" : "Fora do rancho"}</button>
-              : <button className="x" type="button" aria-label="Remover item" onClick={() => setItens((ls) => ls.filter((x) => x.chave !== l.chave))}>×</button>}</td>
+            <td>{!lido && <button className="x" type="button" aria-label="Remover item" onClick={() => setItens((ls) => ls.filter((x) => x.chave !== l.chave))}>×</button>}</td>
           </tr>))}</tbody>
       </table></div>
       <p className="note">Tamanho na medida escolhida: pacote de 500 g = 0,5 kg; garrafa de 900 ml = 0,9 L; fardo com 12 = 12 un. A granel: tamanho 1, medida kg e a quantidade é o peso (0,750).</p>
@@ -270,7 +269,7 @@ function Revisao({ dados, inicial, origem, fotos = [], aoSalvar }) {
         <div className="row">
           <span className="note">
             {fora.length > 0 && <>cupom {brl(total + totalFora)} − fora do rancho {brl(totalFora)} ({fora.length} {fora.length === 1 ? "item" : "itens"}) · </>}
-            {validos.length} itens · desconto {brl(descontos)} · total lançado <b className="money">{brl(total)}</b></span>
+            {validos.length} {validos.length === 1 ? "item" : "itens"} · desconto {brl(descontos)} · total lançado <b className="money">{brl(total)}</b></span>
           <button className="btn" onClick={() => salvar()} disabled={salvando}>{salvando ? "Salvando…" : "Salvar compra"}</button>
         </div>
       </div>
