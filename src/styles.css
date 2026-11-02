@@ -397,3 +397,11 @@ code{font-family:var(--font-mono);font-size:.85em;color:var(--accent)}
 .dicas ul{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:6px;color:var(--muted);font-size:.9rem}
 .pdf-chip{display:inline-flex;align-items:center;padding:8px 12px;border-radius:10px;border:1px solid var(--line-strong);background:var(--accent-soft);font-family:var(--font-mono);font-size:.8rem}
 @media (max-width:420px){.origens{grid-template-columns:1fr 1fr}.origem.principal{grid-column:1/-1;min-height:96px}}
+
+/* fila de fotos antes de enviar */
+.fila{display:flex;gap:10px;overflow-x:auto;padding:4px 2px 8px;scroll-snap-type:x mandatory}
+.fila-item{position:relative;margin:0;flex:0 0 auto;scroll-snap-align:start;display:flex;flex-direction:column;gap:4px;align-items:center}
+.fila-item img,.fila-item .pdf-chip{width:96px;height:128px;object-fit:cover;border-radius:10px;border:1px solid var(--line-strong);box-shadow:0 6px 16px rgba(0,0,0,.25)}
+.fila-item .pdf-chip{display:flex;align-items:center;justify-content:center;text-align:center;word-break:break-all;padding:6px;font-size:.66rem}
+.fila-item figcaption{font-family:var(--font-mono);font-size:.66rem;color:var(--muted);letter-spacing:.08em}
+.fila-remover{position:absolute;top:-6px;right:-6px;width:28px;height:28px;border-radius:50%;border:1px solid var(--line-strong);background:var(--surface-solid);color:var(--bad);font-size:1.1rem;line-height:1;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.3)}

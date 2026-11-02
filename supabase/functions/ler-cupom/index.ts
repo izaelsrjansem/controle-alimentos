@@ -103,10 +103,10 @@ Deno.serve(async (req) => {
   let caminhos: string[] = [];
   try {
     const corpo = await req.json();
-    caminhos = Array.isArray(corpo.caminhos) ? corpo.caminhos.slice(0, 6) : [];
+    caminhos = Array.isArray(corpo.caminhos) ? corpo.caminhos.slice(0, 10) : [];
   } catch { /* corpo inválido cai na validação abaixo */ }
   if (!caminhos.length || caminhos.some((c) => !c.startsWith(user.id + "/"))) {
-    return responder({ erro: "Envie de 1 a 6 fotos do cupom." }, 400);
+    return responder({ erro: "Envie de 1 a 10 fotos do cupom." }, 400);
   }
 
   // fotos vão como imagem; nota fiscal em PDF vai como documento

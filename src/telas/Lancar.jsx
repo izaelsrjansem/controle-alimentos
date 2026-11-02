@@ -23,11 +23,29 @@ export default function Lancar({ dados, aoSalvar }) {
 }
 
 /* ---------- Foto -> IA -> conferência ---------- */
+const MAX_PARTES = 10;
+const ehPdf = (a) => a.type === "application/pdf" || /\.pdf$/i.test(a.name);
+
 function PorFoto({ dados, aoSalvar }) {
   const [etapa, setEtapa] = useState("escolher");
+  const [fila, setFila] = useState([]);       // fotos/PDFs escolhidos, ainda não enviados
   const [previas, setPrevias] = useState([]);
   const [erro, setErro] = useState(null);
   const [leitura, setLeitura] = useState(null);
+
+  // cada escolha entra na fila; nada é enviado até tocar em "Ler cupom"
+  function adicionar(e) {
+    const novos = [...e.target.files];
+    e.target.value = "";                       // deixa escolher a mesma opção de novo
+    if (!novos.length) return;
+    setErro(null);
+    setFila((f) => {
+      const soma = [...f, ...novos.map((a) => ({ id: crypto.randomUUID(), arquivo: a, url: ehPdf(a) ? null : URL.createObjectURL(a) }))];
+      if (soma.length > MAX_PARTES) { setErro(`Dá para juntar até ${MAX_PARTES} fotos por cupom.`); return soma.slice(0, MAX_PARTES); }
+      return soma;
+    });
+  }
+  const remover = (id) => setFila((f) => f.filter((x) => x.id !== id));
 
   async function ler(arquivos) {
     if (!arquivos.length) return;
@@ -44,7 +62,7 @@ function PorFoto({ dados, aoSalvar }) {
           for (const b of await prepararFoto(a)) partes.push({ blob: b, tipo: "image/jpeg", ext: "jpg" });
         } else throw new Error(`"${a.name}" não é foto nem PDF.`);
       }
-      if (partes.length > 6) throw new Error("São partes demais. Envie no máximo 6 fotos (ou corte o cupom em menos pedaços).");
+      if (partes.length > MAX_PARTES) throw new Error(`São partes demais (${partes.length}). Envie no máximo ${MAX_PARTES} fotos.`);
       setPrevias(partes.map((p) => p.tipo === "application/pdf" ? { pdf: p.nome } : { url: URL.createObjectURL(p.blob) }));
       const lote = Date.now();
       const caminhos = [];
@@ -63,7 +81,7 @@ function PorFoto({ dados, aoSalvar }) {
       }
       setLeitura({ ...data, caminhos });
       setEtapa("conferir");
-    } catch (e) { setErro(e.message); setEtapa("escolher"); }
+    } catch (e) { setErro(e.message); setEtapa("escolher"); }   // a fila continua lá para tentar de novo
   }
 
   if (etapa === "conferir" && leitura) {
@@ -80,26 +98,39 @@ function PorFoto({ dados, aoSalvar }) {
     <div className="panel">
       <h2>Enviar o cupom</h2>
       {etapa === "escolher" && <>
-        <p className="destaque-acao">Toque em uma das opções abaixo para enviar o cupom:</p>
+        {fila.length > 0 && <>
+          <p className="destaque-acao">{fila.length === 1 ? "1 parte do cupom pronta." : `${fila.length} partes do cupom prontas.`} Cupom comprido? Tire mais uma foto da parte de baixo. Se já pegou tudo, toque em Ler cupom.</p>
+          <div className="fila">
+            {fila.map((f, i) => (
+              <figure key={f.id} className="fila-item">
+                {f.url ? <img src={f.url} alt={`Parte ${i + 1}`} /> : <span className="pdf-chip">PDF<br />{f.arquivo.name}</span>}
+                <figcaption>Parte {i + 1}</figcaption>
+                <button type="button" className="fila-remover" onClick={() => remover(f.id)} aria-label={`Remover a parte ${i + 1}`}>×</button>
+              </figure>))}
+          </div>
+          <button className="btn grande" type="button" onClick={() => ler(fila.map((f) => f.arquivo))}>
+            Ler cupom ({fila.length === 1 ? "1 parte" : `${fila.length} partes`})</button>
+        </>}
+        {!fila.length && <p className="destaque-acao">Toque em uma das opções abaixo para enviar o cupom:</p>}
         <div className="origens">
-          <label className="origem principal">
-            <IconeOrigem tipo="camera" /><b>Tirar foto</b><small>Abre a câmera</small>
-            <input type="file" accept="image/*" capture="environment" hidden onChange={(e) => ler([...e.target.files])} />
+          <label className={"origem" + (fila.length ? "" : " principal")}>
+            <IconeOrigem tipo="camera" /><b>{fila.length ? "Tirar mais uma foto" : "Tirar foto"}</b><small>{fila.length ? "Próxima parte do cupom" : "Abre a câmera"}</small>
+            <input type="file" accept="image/*" capture="environment" hidden onChange={adicionar} />
           </label>
           <label className="origem">
             <IconeOrigem tipo="galeria" /><b>Galeria</b><small>Fotos já tiradas</small>
-            <input type="file" accept="image/*" multiple hidden onChange={(e) => ler([...e.target.files])} />
+            <input type="file" accept="image/*" multiple hidden onChange={adicionar} />
           </label>
           <label className="origem">
             <IconeOrigem tipo="arquivo" /><b>Arquivos</b><small>PDF ou imagem</small>
-            <input type="file" accept="application/pdf,.pdf,image/*" multiple hidden onChange={(e) => ler([...e.target.files])} />
+            <input type="file" accept="application/pdf,.pdf,image/*" multiple hidden onChange={adicionar} />
           </label>
         </div>
         <details className="dicas">
           <summary>Dicas para a foto sair boa</summary>
           <ul>
             <li>Fotografe o cupom <b>em pé</b>, preenchendo a tela, com boa luz e sem sombra.</li>
-            <li>Cupom comprido: tire 2 ou 3 fotos, de cima para baixo, repetindo um pedaço entre elas, e envie todas pela <b>Galeria</b>.</li>
+            <li>Cupom comprido: tire uma foto de cada parte, de cima para baixo, repetindo um pedaço entre elas. Pode juntar até {MAX_PARTES} fotos.</li>
             <li>Recebeu a nota fiscal em <b>PDF</b> (por e-mail ou aplicativo do mercado)? Use <b>Arquivos</b>.</li>
           </ul>
         </details>
