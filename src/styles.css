@@ -509,3 +509,11 @@ input[type="range"]{padding:0;accent-color:var(--accent)}
 .atalhos{gap:6px}
 .chip{font:inherit;font-size:.8rem;padding:6px 12px;border-radius:999px;border:1px solid var(--line-strong);background:var(--raise);color:var(--fg);cursor:pointer}
 .chip:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ---------- textos mais firmes (contraste maior) ---------- */
+:root{--fg:#f1f5fb; --muted:#aab7cb}
+:root[data-theme="claro"]{--fg:#070d1a; --muted:#344157}
+.note,.it .sub,.cartao-nome small,.cartao-preco .ref,.secao-texto small,.tema small,.origem small{color:var(--muted)}
+.note{font-weight:450}
+::placeholder{color:var(--muted);opacity:.75}
+:root[data-theme="claro"] .lbl,:root[data-theme="claro"] th{color:#3b4860}
