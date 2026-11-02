@@ -275,3 +275,11 @@ begin
   perform registrar('lançou compra', v_resumo);
   return v_compra;
 end $$;
+
+-- Usado só pela função admin-usuarios (chave de serviço): acha a conta pelo e-mail
+create or replace function public._usuario_por_email(p_email text) returns uuid
+language sql stable security definer set search_path = public, auth as $$
+  select id from auth.users where lower(email) = lower(p_email) limit 1
+$$;
+revoke all on function public._usuario_por_email(text) from public, anon, authenticated;
+grant execute on function public._usuario_por_email(text) to service_role;
