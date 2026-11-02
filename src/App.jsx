@@ -92,7 +92,7 @@ function Painel({ email, userId }) {
               {aba === "lista" && <Lista dados={dados} />}
               {aba === "comparar" && <Comparar dados={dados} ir={ir} />}
               {aba === "lancar" && <Lancar dados={dados} aoSalvar={() => { dados.recarregar(); ir("resumo"); }} />}
-              {aba === "ajustes" && <Ajustes membro={membro} />}
+              {aba === "ajustes" && <Ajustes membro={membro} email={email} />}
             </>
           )}
         </section>

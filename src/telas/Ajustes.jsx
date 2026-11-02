@@ -1,15 +1,77 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../supabase.js";
 import { lerPreferencia, salvarPreferencia } from "../tema.js";
+import { CampoSenha } from "./Login.jsx";
 
 const quando = (iso) => iso ? new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" }) : "nunca";
+const registrar = (acao, descricao) => supabase.rpc("registrar", { p_acao: acao, p_descricao: descricao ?? null }).then(() => {}, () => {});
 
-export default function Ajustes({ membro }) {
+export default function Ajustes({ membro, email }) {
   return (
     <>
+      <MinhaConta membro={membro} email={email} />
       <Aparencia />
       {membro?.papel === "admin" && <Administracao />}
     </>
+  );
+}
+
+/* ---------- Minha conta: trocar a senha e sair ---------- */
+function MinhaConta({ membro, email }) {
+  const [aberto, setAberto] = useState(false);
+  const [f, setF] = useState({ atual: "", nova: "", repetir: "" });
+  const [msg, setMsg] = useState(null);
+  const [salvando, setSalvando] = useState(false);
+  const set = (k) => (v) => setF({ ...f, [k]: v });
+
+  async function trocar(e) {
+    e.preventDefault();
+    if (!f.atual) return setMsg({ tipo: "erro", texto: "Digite a senha atual." });
+    if (f.nova.length < 8) return setMsg({ tipo: "erro", texto: "A senha nova precisa de pelo menos 8 caracteres." });
+    if (f.nova !== f.repetir) return setMsg({ tipo: "erro", texto: "A confirmação não é igual à senha nova." });
+    if (f.nova === f.atual) return setMsg({ tipo: "erro", texto: "A senha nova precisa ser diferente da atual." });
+    setSalvando(true); setMsg(null);
+    // confere a senha atual antes de trocar
+    const { error: e1 } = await supabase.auth.signInWithPassword({ email, password: f.atual });
+    if (e1) { setSalvando(false); return setMsg({ tipo: "erro", texto: "A senha atual está incorreta." }); }
+    const { error } = await supabase.auth.updateUser({ password: f.nova });
+    setSalvando(false);
+    if (error) return setMsg({ tipo: "erro", texto: "Não consegui trocar a senha: " + error.message });
+    try { if (window.PasswordCredential) await navigator.credentials.store(new window.PasswordCredential({ id: email, password: f.nova, name: email })); } catch { /* sem gerenciador */ }
+    registrar("trocou a própria senha");
+    setF({ atual: "", nova: "", repetir: "" }); setAberto(false);
+    setMsg({ tipo: "ok", texto: "Senha alterada. Use a senha nova da próxima vez que entrar." });
+  }
+
+  return (
+    <div className="panel">
+      <h2>Minha conta</h2>
+      <div className="conta">
+        <div><b>{membro?.nome || email}</b><div className="note">{email} · {membro?.papel === "admin" ? "administrador" : "membro"}</div></div>
+      </div>
+      {msg && <div className={msg.tipo} role="alert">{msg.texto}</div>}
+      {aberto ? (
+        <form className="trocar-senha" onSubmit={trocar} noValidate>
+          <input type="email" name="email" autoComplete="username" value={email} readOnly hidden />
+          <div className="campo"><label className="lbl" htmlFor="senha-atual">Senha atual</label>
+            <CampoSenha id="senha-atual" valor={f.atual} aoMudar={set("atual")} autoComplete="current-password" /></div>
+          <div className="campo"><label className="lbl" htmlFor="senha-nova">Senha nova</label>
+            <CampoSenha id="senha-nova" valor={f.nova} aoMudar={set("nova")} autoComplete="new-password" placeholder="Mínimo de 8 caracteres" /></div>
+          <div className="campo"><label className="lbl" htmlFor="senha-repetir">Repita a senha nova</label>
+            <CampoSenha id="senha-repetir" valor={f.repetir} aoMudar={set("repetir")} autoComplete="new-password" /></div>
+          <div className="row">
+            <button className="btn" type="submit" disabled={salvando}>{salvando ? "Salvando…" : "Salvar senha nova"}</button>
+            <button className="btn ghost" type="button" onClick={() => { setAberto(false); setMsg(null); setF({ atual: "", nova: "", repetir: "" }); }}>Cancelar</button>
+          </div>
+        </form>
+      ) : (
+        <div className="row">
+          <button className="btn ghost" type="button" onClick={() => { setAberto(true); setMsg(null); }}>Alterar minha senha</button>
+          <button className="btn ghost" type="button" onClick={() => supabase.auth.signOut()}>Sair</button>
+          <button className="sair" type="button" onClick={() => supabase.auth.signOut({ scope: "global" })}>Sair de todos os aparelhos</button>
+        </div>
+      )}
+    </div>
   );
 }
 

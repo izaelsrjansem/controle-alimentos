@@ -272,3 +272,38 @@ code{font-family:var(--font-mono);font-size:.85em;color:var(--accent)}
 .lembrar input{width:20px;height:20px;accent-color:var(--accent);flex:0 0 auto}
 .login .btn{min-height:48px;font-size:1rem;touch-action:manipulation}
 .login input{font-size:16px} /* abaixo de 16px o iPhone dá zoom no campo */
+
+/* ---------- lista de compras: cartões de vidro ---------- */
+.grupo-lista{display:flex;flex-direction:column;gap:10px;padding-top:6px}
+.cartoes{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.cartao{position:relative;display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:16px;overflow:hidden;
+  background:linear-gradient(145deg,rgba(255,255,255,.09),rgba(255,255,255,.02) 55%),var(--surface);
+  backdrop-filter:blur(16px) saturate(140%);-webkit-backdrop-filter:blur(16px) saturate(140%);
+  border:1px solid var(--line-strong);box-shadow:0 10px 28px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.12);
+  transition:transform .15s,box-shadow .2s,opacity .2s,border-color .2s}
+.cartao::before{content:"";position:absolute;inset:0 0 auto;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));opacity:.75}
+.cartao::after{content:"";position:absolute;right:-40px;top:-40px;width:120px;height:120px;border-radius:50%;
+  background:radial-gradient(circle,rgba(34,211,238,.18),transparent 70%);pointer-events:none}
+.cartao.urgente::before{background:linear-gradient(90deg,var(--bad),var(--warn))}
+.cartao:hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(0,0,0,.32),var(--glow)}
+.cartao-topo{display:flex;gap:12px;align-items:flex-start;cursor:pointer;position:relative;z-index:1}
+.cartao-topo input{position:absolute;opacity:0;width:1px;height:1px}
+.marca-pego{flex:0 0 auto;width:26px;height:26px;border-radius:8px;border:1.5px solid var(--line-strong);background:var(--field-bg);
+  display:grid;place-items:center;transition:background .2s,border-color .2s,box-shadow .2s}
+.cartao-topo input:focus-visible + .marca-pego{outline:2px solid var(--accent);outline-offset:2px}
+.cartao-nome{display:flex;flex-direction:column;gap:2px;min-width:0}
+.cartao-nome b{font-family:var(--font-head);font-size:1.02rem;line-height:1.25}
+.cartao-nome small{color:var(--muted);font-size:.8rem}
+.cartao-preco{display:flex;flex-direction:column;gap:2px;position:relative;z-index:1}
+.cartao-preco .money{font-size:1.35rem;font-weight:600;color:var(--accent)}
+.cartao-preco .ref{color:var(--muted);font-size:.78rem}
+.cartao .tag{align-self:flex-start;white-space:normal}
+.cartao .chips{align-self:flex-start;position:relative;z-index:1}
+.cartao.pego{opacity:.55;border-color:rgba(52,211,153,.45)}
+.cartao.pego .marca-pego{background:var(--good);border-color:var(--good);box-shadow:0 0 12px rgba(52,211,153,.6)}
+.cartao.pego .marca-pego::after{content:"";width:7px;height:13px;border:solid #04130d;border-width:0 3px 3px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.cartao.pego .cartao-nome b{text-decoration:line-through}
+:root[data-theme="claro"] .cartao{background:linear-gradient(145deg,rgba(255,255,255,.95),rgba(255,255,255,.6)),var(--surface);box-shadow:0 10px 26px rgba(15,40,80,.1),inset 0 1px 0 #fff}
+@media (max-width:720px){.cartoes{grid-template-columns:1fr}}
+.trocar-senha{display:flex;flex-direction:column;gap:12px;max-width:420px}
+.conta{display:flex;align-items:center;gap:12px}

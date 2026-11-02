@@ -47,22 +47,31 @@ export default function Lista({ dados }) {
             <button className="btn ghost" onClick={() => { setPegos(new Set()); gravarPegos(new Set()); }}>Desmarcar o que já peguei</button>
           </div>
         </div>
-        <p className="note">A estimativa repete a quantidade e o último preço pago. Em verde, o mercado onde você viu o menor preço.</p>
+        <p className="note">Toque no item para marcar que já está no carrinho. A estimativa repete a quantidade e o último preço pago; em verde, o mercado onde você viu o menor preço.</p>
         {!itens.length && <p className="empty">A lista está vazia. Na aba Itens, marque como <b>Acabando</b> ou <b>Comprar</b> o que precisa repor.</p>}
         {porCat.map(([cat, ls]) => (
-          <div key={cat} className="list">
-            <div className="lbl" style={{ paddingTop: 10 }}>{cat}</div>
-            {ls.map(({ g, u, qtd, custo, melhor }) => (
-              <div className="it" key={g.id} style={pegos.has(g.id) ? { opacity: 0.55 } : undefined}>
-                <label className="nm" style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-                  <input type="checkbox" id={"pego-" + g.id} checked={pegos.has(g.id)} onChange={() => trocarPego(g.id)} style={{ width: "auto", marginTop: 3 }} />
-                  <span>{g.nome} <span className="sub">{descr(u)}</span></span>
-                </label>
-                <span className="pr"><span className="money">{brl(custo)}</span><span className="ref">{num(qtd)} × {brl(u.valor_unitario)}</span></span>
-                <span className="act"><Chips item={g} dados={dados} />
-                  {melhor && <span className="tag good">{melhor.mercado}: {brl(melhor.preco_referencia)}/{medidaTxt[g.medida]}</span>}</span>
-              </div>))}
-          </div>))}
+          <section key={cat} className="grupo-lista">
+            <div className="lbl">{cat} · {ls.length}</div>
+            <div className="cartoes">
+              {ls.map(({ g, u, qtd, custo, melhor }) => {
+                const pego = pegos.has(g.id);
+                return (
+                  <article className={"cartao" + (pego ? " pego" : "") + (dados.situacao[g.id] === "comprar" ? " urgente" : "")} key={g.id}>
+                    <label className="cartao-topo">
+                      <input type="checkbox" id={"pego-" + g.id} checked={pego} onChange={() => trocarPego(g.id)} aria-label={`${g.nome}: já está no carrinho`} />
+                      <span className="marca-pego" aria-hidden="true" />
+                      <span className="cartao-nome"><b>{g.nome}</b><small>{descr(u)}</small></span>
+                    </label>
+                    <div className="cartao-preco">
+                      <span className="money">{brl(custo)}</span>
+                      <span className="ref">{num(qtd)} × {brl(u.valor_unitario)} · {u.mercado}</span>
+                    </div>
+                    {melhor && <div className="tag good">Mais barato: {melhor.mercado} · {brl(melhor.preco_referencia)}/{medidaTxt[g.medida]}</div>}
+                    <Chips item={g} dados={dados} />
+                  </article>);
+              })}
+            </div>
+          </section>))}
       </div>
     </>
   );
