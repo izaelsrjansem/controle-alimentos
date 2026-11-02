@@ -50,7 +50,7 @@ export default function Itens({ dados }) {
 
   return (
     <div className="panel">
-      <div className="row">
+      <div className="row filtros">
         <div className="grow"><input id="busca" type="search" placeholder="Buscar item ou marca (ex.: arroz, Ninho)" value={busca} onChange={(e) => setBusca(e.target.value)} aria-label="Buscar item" /></div>
         <div style={{ flex: "0 1 200px" }}><select id="cat" value={cat} onChange={(e) => setCat(e.target.value)} aria-label="Categoria">
           <option value="">Todas as categorias</option>{cats.map((c) => <option key={c}>{c}</option>)}</select></div>
