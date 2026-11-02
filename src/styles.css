@@ -377,3 +377,23 @@ code{font-family:var(--font-mono);font-size:.85em;color:var(--accent)}
   background:radial-gradient(700px 400px at 50% 0%,var(--brilho2),transparent 70%),var(--bg);overflow:auto}
 .tela-bloqueio .panel{width:min(400px,100%);padding:26px;box-shadow:0 20px 60px rgba(0,0,0,.45),var(--glow)}
 .btn.grande{min-height:52px;font-size:1.02rem}
+
+/* ---------- enviar o cupom: Tirar foto / Galeria / Arquivos ---------- */
+.destaque-acao{margin:0;font-weight:600;font-size:1rem}
+.origens{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.origem{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;cursor:pointer;min-height:118px;padding:14px 8px;border-radius:16px;
+  background:linear-gradient(145deg,rgba(255,255,255,.08),rgba(255,255,255,.02)),var(--surface);border:1px solid var(--line-strong);
+  box-shadow:0 8px 22px rgba(0,0,0,.2);transition:transform .15s,box-shadow .2s,border-color .2s;-webkit-tap-highlight-color:transparent}
+.origem svg{width:34px;height:34px;color:var(--accent)}
+.origem b{font-family:var(--font-head);font-size:1rem}
+.origem small{color:var(--muted);font-size:.76rem}
+.origem:hover,.origem:focus-within{border-color:var(--accent);box-shadow:var(--glow)}
+.origem:active{transform:scale(.97)}
+.origem.principal{background:linear-gradient(135deg,var(--accent),#38bdf8 55%,var(--accent2));border-color:transparent;color:var(--accent-fg);box-shadow:0 10px 26px rgba(34,211,238,.35)}
+.origem.principal svg,.origem.principal small{color:var(--accent-fg)}
+.origem.principal small{opacity:.85}
+.dicas{border:1px solid var(--line);border-radius:12px;padding:10px 14px;background:var(--raise)}
+.dicas summary{cursor:pointer;font-weight:600;color:var(--accent)}
+.dicas ul{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:6px;color:var(--muted);font-size:.9rem}
+.pdf-chip{display:inline-flex;align-items:center;padding:8px 12px;border-radius:10px;border:1px solid var(--line-strong);background:var(--accent-soft);font-family:var(--font-mono);font-size:.8rem}
+@media (max-width:420px){.origens{grid-template-columns:1fr 1fr}.origem.principal{grid-column:1/-1;min-height:96px}}

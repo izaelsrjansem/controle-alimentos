@@ -34,16 +34,24 @@ function PorFoto({ dados, aoSalvar }) {
     setErro(null); setEtapa("enviando");
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      // foto vira JPEG (cortada em partes se o cupom for comprido); PDF vai do jeito que está
       const partes = [];
-      for (const a of arquivos) partes.push(...await prepararFoto(a));
+      for (const a of arquivos) {
+        if (a.type === "application/pdf" || /\.pdf$/i.test(a.name)) {
+          if (a.size > 10 * 1024 * 1024) throw new Error(`O PDF "${a.name}" passa de 10 MB.`);
+          partes.push({ blob: a, tipo: "application/pdf", ext: "pdf", nome: a.name });
+        } else if (a.type.startsWith("image/") || !a.type) {
+          for (const b of await prepararFoto(a)) partes.push({ blob: b, tipo: "image/jpeg", ext: "jpg" });
+        } else throw new Error(`"${a.name}" não é foto nem PDF.`);
+      }
       if (partes.length > 6) throw new Error("São partes demais. Envie no máximo 6 fotos (ou corte o cupom em menos pedaços).");
-      setPrevias(partes.map((b) => URL.createObjectURL(b)));
+      setPrevias(partes.map((p) => p.tipo === "application/pdf" ? { pdf: p.nome } : { url: URL.createObjectURL(p.blob) }));
       const lote = Date.now();
       const caminhos = [];
-      for (const [i, b] of partes.entries()) {
-        const caminho = `${user.id}/${lote}-${i + 1}.jpg`;
-        const { error } = await supabase.storage.from("cupons").upload(caminho, b, { contentType: "image/jpeg" });
-        if (error) throw new Error("Falha ao enviar a foto: " + error.message);
+      for (const [i, p] of partes.entries()) {
+        const caminho = `${user.id}/${lote}-${i + 1}.${p.ext}`;
+        const { error } = await supabase.storage.from("cupons").upload(caminho, p.blob, { contentType: p.tipo });
+        if (error) throw new Error((p.ext === "pdf" ? "Falha ao enviar o PDF: " : "Falha ao enviar a foto: ") + error.message);
         caminhos.push(caminho);
       }
       setEtapa("lendo");
@@ -62,7 +70,7 @@ function PorFoto({ dados, aoSalvar }) {
     return (
       <>
         <AvisoConferencia leitura={leitura} />
-        {previas.length > 0 && <div className="fotos">{previas.map((u) => <img key={u} src={u} alt="Parte do cupom enviada" />)}</div>}
+        <Previas previas={previas} />
         <Revisao dados={dados} origem="foto" fotos={leitura.caminhos} aoSalvar={aoSalvar} inicial={inicialDaLeitura(leitura)} />
       </>
     );
@@ -70,23 +78,54 @@ function PorFoto({ dados, aoSalvar }) {
 
   return (
     <div className="panel">
-      <h2>Foto do cupom</h2>
-      <div className="drop">
-        {etapa === "escolher" && <>
-          <p style={{ margin: 0 }}>Fotografe o cupom <b>em pé</b>, preenchendo a tela, com boa luz. Cupom comprido: tire 2 ou 3 fotos, de cima para baixo, repetindo um pedaço entre elas.</p>
-          <label className="btn" style={{ display: "inline-block" }}>
-            Escolher ou tirar foto
+      <h2>Enviar o cupom</h2>
+      {etapa === "escolher" && <>
+        <p className="destaque-acao">Toque em uma das opções abaixo para enviar o cupom:</p>
+        <div className="origens">
+          <label className="origem principal">
+            <IconeOrigem tipo="camera" /><b>Tirar foto</b><small>Abre a câmera</small>
+            <input type="file" accept="image/*" capture="environment" hidden onChange={(e) => ler([...e.target.files])} />
+          </label>
+          <label className="origem">
+            <IconeOrigem tipo="galeria" /><b>Galeria</b><small>Fotos já tiradas</small>
             <input type="file" accept="image/*" multiple hidden onChange={(e) => ler([...e.target.files])} />
           </label>
-        </>}
-        {etapa === "enviando" && <p className="carregando">Preparando e enviando a foto…</p>}
-        {etapa === "lendo" && <p className="carregando">Lendo os itens do cupom. Isso leva de 20 segundos a 1 minuto e meio…</p>}
-        {previas.length > 0 && etapa !== "escolher" && <div className="fotos">{previas.map((u) => <img key={u} src={u} alt="Parte do cupom" />)}</div>}
-      </div>
+          <label className="origem">
+            <IconeOrigem tipo="arquivo" /><b>Arquivos</b><small>PDF ou imagem</small>
+            <input type="file" accept="application/pdf,.pdf,image/*" multiple hidden onChange={(e) => ler([...e.target.files])} />
+          </label>
+        </div>
+        <details className="dicas">
+          <summary>Dicas para a foto sair boa</summary>
+          <ul>
+            <li>Fotografe o cupom <b>em pé</b>, preenchendo a tela, com boa luz e sem sombra.</li>
+            <li>Cupom comprido: tire 2 ou 3 fotos, de cima para baixo, repetindo um pedaço entre elas, e envie todas pela <b>Galeria</b>.</li>
+            <li>Recebeu a nota fiscal em <b>PDF</b> (por e-mail ou aplicativo do mercado)? Use <b>Arquivos</b>.</li>
+          </ul>
+        </details>
+      </>}
+      {etapa === "enviando" && <p className="carregando">Preparando e enviando o cupom…</p>}
+      {etapa === "lendo" && <p className="carregando">Lendo os itens do cupom. Isso leva de 20 segundos a 1 minuto e meio…</p>}
+      {etapa !== "escolher" && <Previas previas={previas} />}
       {erro && <div className="erro">{erro}</div>}
-      <p className="note">Nada é salvo antes de você conferir. A foto fica guardada junto com a compra, como comprovante.</p>
+      <p className="note">Nada é salvo antes de você conferir. A foto ou o PDF fica guardado junto com a compra, como comprovante.</p>
     </div>
   );
+}
+
+const Previas = ({ previas }) => previas.length > 0 && (
+  <div className="fotos">{previas.map((p, i) => p.url
+    ? <img key={p.url} src={p.url} alt={`Parte ${i + 1} do cupom`} />
+    : <span key={i} className="pdf-chip">PDF · {p.pdf}</span>)}</div>
+);
+
+function IconeOrigem({ tipo }) {
+  const d = {
+    camera: <><path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><circle cx="12" cy="13" r="3.5" /></>,
+    galeria: <><rect x="3" y="3" width="18" height="18" rx="3" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></>,
+    arquivo: <><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" /><path d="M14 3v6h6" /><path d="M9 14h6M9 17h4" /></>,
+  }[tipo];
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>;
 }
 
 function AvisoConferencia({ leitura }) {

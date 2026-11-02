@@ -109,12 +109,20 @@ Deno.serve(async (req) => {
     return responder({ erro: "Envie de 1 a 6 fotos do cupom." }, 400);
   }
 
+  // fotos vão como imagem; nota fiscal em PDF vai como documento
   const imagens = [];
+  let temPdf = false;
   for (const caminho of caminhos) {
     const { data, error } = await supabase.storage.from("cupons").download(caminho);
-    if (error || !data) return responder({ erro: "Não encontrei a foto enviada. Tente enviar de novo." }, 404);
-    const tipo = data.type === "image/png" || data.type === "image/webp" ? data.type : "image/jpeg";
-    imagens.push({ type: "image" as const, source: { type: "base64" as const, media_type: tipo, data: base64(new Uint8Array(await data.arrayBuffer())) } });
+    if (error || !data) return responder({ erro: "Não encontrei o arquivo enviado. Tente enviar de novo." }, 404);
+    const dados = base64(new Uint8Array(await data.arrayBuffer()));
+    if (data.type === "application/pdf" || caminho.endsWith(".pdf")) {
+      temPdf = true;
+      imagens.push({ type: "document" as const, source: { type: "base64" as const, media_type: "application/pdf" as const, data: dados } });
+    } else {
+      const tipo = data.type === "image/png" || data.type === "image/webp" ? data.type : "image/jpeg";
+      imagens.push({ type: "image" as const, source: { type: "base64" as const, media_type: tipo, data: dados } });
+    }
   }
 
   const { data: produtos } = await supabase.from("produtos").select("nome").order("nome").limit(400);
@@ -135,7 +143,9 @@ Deno.serve(async (req) => {
         role: "user",
         content: [
           ...imagens,
-          { type: "text", text: imagens.length > 1
+          { type: "text", text: temPdf
+              ? "O cupom veio em PDF (nota fiscal eletrônica). Extraia todos os itens."
+              : imagens.length > 1
               ? `São ${imagens.length} partes do mesmo cupom, de cima para baixo. Extraia todos os itens.`
               : "Extraia todos os itens deste cupom." },
         ],
