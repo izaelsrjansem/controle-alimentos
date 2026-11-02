@@ -3,6 +3,7 @@ import { supabase } from "../supabase.js";
 import { brl, dataBR, hoje, prepararFoto, mesmaCompra, CATEGORIAS, TIPO_DA_CATEGORIA } from "../util.js";
 
 const r2 = (v) => Math.round((Number(v) || 0) * 100) / 100;
+const registrarAcao = (acao, descricao) => supabase.rpc("registrar", { p_acao: acao, p_descricao: descricao || null }).then(() => {}, () => {});
 const linhaVazia = () => ({ chave: crypto.randomUUID(), nome: "", marca: "", categoria: "Mercearia", tipo: "alimento", embalagem: "",
   tamanho: 1, medida: "un", quantidade: 1, valor_unitario: "", desconto: 0, valor_total: 0, duvida: false, descricao_cupom: "" });
 
@@ -84,12 +85,20 @@ function PorFoto({ dados, aoSalvar }) {
     } catch (e) { setErro(e.message); setEtapa("escolher"); }   // a fila continua lá para tentar de novo
   }
 
+  // jogou fora a leitura: apaga as fotos já enviadas e volta para escolher outras
+  function descartar() {
+    if (leitura?.caminhos?.length) supabase.storage.from("cupons").remove(leitura.caminhos).then(() => {}, () => {});
+    registrarAcao("descartou leitura de cupom", leitura?.mercado);
+    setLeitura(null); setFila([]); setPrevias([]); setErro(null); setEtapa("escolher");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   if (etapa === "conferir" && leitura) {
     return (
       <>
         <AvisoConferencia leitura={leitura} />
         <Previas previas={previas} />
-        <Revisao dados={dados} origem="foto" fotos={leitura.caminhos} aoSalvar={aoSalvar} inicial={inicialDaLeitura(leitura)} />
+        <Revisao dados={dados} origem="foto" fotos={leitura.caminhos} aoSalvar={aoSalvar} inicial={inicialDaLeitura(leitura)} aoDescartar={descartar} />
       </>
     );
   }
@@ -219,8 +228,8 @@ function Colar({ dados, aoSalvar }) {
     return (
       <>
         <AvisoConferencia leitura={leitura} />
-        <Revisao dados={dados} origem="foto" aoSalvar={aoSalvar} inicial={inicialDaLeitura(leitura)} />
-        <button className="btn ghost" type="button" onClick={() => setLeitura(null)}>Colar outro texto</button>
+        <Revisao dados={dados} origem="foto" aoSalvar={aoSalvar} inicial={inicialDaLeitura(leitura)}
+          aoDescartar={() => { registrarAcao("descartou leitura colada", leitura.mercado); setLeitura(null); setTexto(""); }} />
       </>
     );
   }
@@ -245,7 +254,8 @@ function Colar({ dados, aoSalvar }) {
 }
 
 /* ---------- Tabela editável, usada pela foto e pela digitação ---------- */
-function Revisao({ dados, inicial, origem, fotos = [], aoSalvar }) {
+function Revisao({ dados, inicial, origem, fotos = [], aoSalvar, aoDescartar }) {
+  const [descartando, setDescartando] = useState(false);
   const [cab, setCab] = useState({ mercado: inicial.mercado, data: inicial.data, pagamento: inicial.pagamento });
   const [itens, setItens] = useState(inicial.itens);
   const [msg, setMsg] = useState(null);
@@ -356,7 +366,18 @@ function Revisao({ dados, inicial, origem, fotos = [], aoSalvar }) {
           <span className="lbl">{validos.length} {validos.length === 1 ? "item" : "itens"} · desconto {brl(descontos)}{fora.length > 0 && <> · fora do rancho {brl(totalFora)}</>}</span>
           <span className="money">{brl(total)}</span>
         </div>
-        <button className="btn" onClick={() => salvar()} disabled={salvando}>{salvando ? "Salvando…" : "Salvar compra"}</button>
+        {descartando ? (
+          <div className="resumo-acoes">
+            <span className="confirma">Descartar sem salvar?</span>
+            <button className="btn ghost" type="button" onClick={() => setDescartando(false)}>Não</button>
+            <button className="btn perigo" type="button" onClick={aoDescartar}>Sim, descartar</button>
+          </div>
+        ) : (
+          <div className="resumo-acoes">
+            {aoDescartar && <button className="btn ghost" type="button" onClick={() => setDescartando(true)} disabled={salvando}>Descartar</button>}
+            <button className="btn" onClick={() => salvar()} disabled={salvando}>{salvando ? "Salvando…" : "Salvar compra"}</button>
+          </div>
+        )}
       </div>
       {repetida && <div className="banner">
         Esta compra já foi lançada: {repetida.mercado}, {dataBR(repetida.data)}, {brl(repetida.total_pago)}. Salvar de novo vai contar tudo em dobro.
