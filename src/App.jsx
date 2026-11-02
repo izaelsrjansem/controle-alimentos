@@ -7,10 +7,13 @@ import Itens from "./telas/Itens.jsx";
 import Lista from "./telas/Lista.jsx";
 import Comparar from "./telas/Comparar.jsx";
 import Lancar from "./telas/Lancar.jsx";
+import InstalarApp from "./instalar.jsx";
+import { ICONES, Logo } from "./icones.jsx";
 
+// [chave, rótulo, rótulo curto da barra inferior do celular]
 const ABAS = [
-  ["resumo", "Mês"], ["itens", "Itens"], ["lista", "Lista de compras"],
-  ["comparar", "Comparar mercados"], ["lancar", "Lançar compra"],
+  ["resumo", "Mês", "Mês"], ["itens", "Itens", "Itens"], ["lista", "Lista de compras", "Lista"],
+  ["comparar", "Comparar mercados", "Comparar"], ["lancar", "Lançar compra", "Lançar"],
 ];
 
 export default function App() {
@@ -52,12 +55,13 @@ function Painel({ email }) {
       <header className="top">
         <div className="wrap">
           <div className="brand">
-            <h1>Despensa e Preços</h1>
-            <span className="status">{email} · <button className="sair" onClick={() => supabase.auth.signOut()}>Sair</button></span>
+            <div className="logo"><Logo /><div><small>Sistema de compras</small><h1>Despensa e Preços</h1></div></div>
+            <span className="status"><InstalarApp /><span className="pulso" aria-hidden="true" />{email} · <button className="sair" onClick={() => supabase.auth.signOut()}>Sair</button></span>
           </div>
           <nav className="tabs" role="tablist" aria-label="Seções">
-            {ABAS.map(([k, rotulo]) => (
-              <button key={k} role="tab" aria-selected={aba === k} onClick={() => ir(k)}>{rotulo}</button>
+            {ABAS.map(([k, rotulo, curto]) => (
+              <button key={k} role="tab" aria-selected={aba === k} aria-label={rotulo} onClick={() => ir(k)}>
+                {ICONES[k]}<span className="longo">{rotulo}</span><span className="curto">{curto}</span></button>
             ))}
           </nav>
         </div>

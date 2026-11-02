@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "../supabase.js";
+import { Logo } from "../icones.jsx";
 
 const TEXTOS = {
   entrar: { titulo: "Entrar", botao: "Entrar" },
@@ -30,7 +31,7 @@ export default function Login() {
   return (
     <div className="login wrap">
       <form className="panel" onSubmit={enviar}>
-        <div><div className="lbl">Despensa e Preços</div><h1>{TEXTOS[modo].titulo}</h1></div>
+        <div className="logo"><Logo /><div><small>Despensa e Preços</small><h1>{TEXTOS[modo].titulo}</h1></div></div>
         <label className="form" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           <span className="lbl">E-mail</span>
           <input id="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
