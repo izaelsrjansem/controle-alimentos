@@ -243,35 +243,47 @@ function Revisao({ dados, inicial, origem, fotos = [], aoSalvar }) {
       <datalist id="lista-mercados">{mercados.map((m) => <option key={m} value={m} />)}</datalist>
       <datalist id="lista-itens">{dados.itens.map((g) => <option key={g.id} value={g.nome} />)}</datalist>
 
-      {lido && <p className="note">Item que não é do rancho (lençol, liquidificador, eletrônico...)? Toque em <b>Fora do rancho</b> na linha dele: o item fica guardado na compra, mas não conta no total nem nos relatórios.</p>}
-      <div className="tablewrap"><table className="revisao">
-        <thead><tr>{lido && <th />}<th>Item</th><th>Marca</th><th>Categoria</th><th>Embalagem</th><th className="r">Tam.</th><th>Medida</th><th className="r">Qtd</th><th className="r">R$ unit.</th><th className="r">Desc.</th><th className="r">Total</th><th /></tr></thead>
-        <tbody>{itens.map((l) => (
-          <tr key={l.chave} className={l.fora ? "fora" : l.duvida ? "duvida" : ""}>
-            {lido && <td className="acao"><button className="btn ghost" type="button" style={{ whiteSpace: "nowrap" }} onClick={() => alternarFora(l.chave)}>{l.fora ? "Incluir de novo" : "Fora do rancho"}</button></td>}
-            <td style={{ minWidth: 170 }}>{campo(l, "nome", { list: "lista-itens", onBlur: () => completar(l.chave), placeholder: "Arroz tipo 1" })}
-              {l.descricao_cupom && <div className="note">{l.descricao_cupom}</div>}</td>
-            <td style={{ minWidth: 100 }}>{campo(l, "marca")}</td>
-            <td><select id={`cat-${l.chave}`} value={l.categoria} onChange={(e) => mudar(l.chave, "categoria", e.target.value)}>{CATEGORIAS.map((c) => <option key={c}>{c}</option>)}</select></td>
-            <td style={{ minWidth: 90 }}>{campo(l, "embalagem", { placeholder: "1 kg" })}</td>
-            <td style={{ width: 70 }}>{campo(l, "tamanho", { type: "number", step: "0.001", min: "0" })}</td>
-            <td><select id={`med-${l.chave}`} value={l.medida} onChange={(e) => mudar(l.chave, "medida", e.target.value)}><option value="kg">kg</option><option value="L">L</option><option value="un">un.</option></select></td>
-            <td style={{ width: 70 }}>{campo(l, "quantidade", { type: "number", step: "0.001", min: "0" })}</td>
-            <td style={{ width: 80 }}>{campo(l, "valor_unitario", { type: "number", step: "0.01", min: "0" })}</td>
-            <td style={{ width: 70 }}>{campo(l, "desconto", { type: "number", step: "0.01", min: "0" })}</td>
-            <td className="r money">{brl(l.valor_total)}</td>
-            <td>{!lido && <button className="x" type="button" aria-label="Remover item" onClick={() => setItens((ls) => ls.filter((x) => x.chave !== l.chave))}>×</button>}</td>
-          </tr>))}</tbody>
-      </table></div>
+      {lido && <p className="note">Confira cada cartão. Item que não é do rancho (lençol, liquidificador, eletrônico...)? Toque em <b>Fora do rancho</b>: ele fica guardado na compra, mas não conta no total nem nos relatórios. Cartões em amarelo têm algum número que a leitura não teve certeza.</p>}
+      <div className="cartoes conferencia">
+        {itens.map((l, n) => (
+          <article key={l.chave} className={"cartao cartao-edit" + (l.fora ? " fora" : l.duvida ? " duvida" : "")}>
+            <div className="cartao-cab">
+              <span className="cartao-num">{String(n + 1).padStart(2, "0")}</span>
+              {l.fora && <span className="tag">fora do rancho</span>}
+              {!l.fora && l.duvida && <span className="tag aviso">conferir</span>}
+              <span style={{ flex: 1 }} />
+              {lido
+                ? <button className="btn ghost pequeno" type="button" onClick={() => alternarFora(l.chave)}>{l.fora ? "Incluir de novo" : "Fora do rancho"}</button>
+                : <button className="x" type="button" aria-label="Remover item" onClick={() => setItens((ls) => ls.filter((x) => x.chave !== l.chave))}>×</button>}
+            </div>
+            <label className="campo-c nome">Item
+              {campo(l, "nome", { list: "lista-itens", onBlur: () => completar(l.chave), placeholder: "Arroz tipo 1" })}
+              {l.descricao_cupom && <small>No cupom: {l.descricao_cupom}</small>}</label>
+            <div className="grade-campos">
+              <label className="campo-c">Marca{campo(l, "marca")}</label>
+              <label className="campo-c">Categoria<select id={`cat-${l.chave}`} value={l.categoria} onChange={(e) => mudar(l.chave, "categoria", e.target.value)}>{CATEGORIAS.map((c) => <option key={c}>{c}</option>)}</select></label>
+              <label className="campo-c">Embalagem{campo(l, "embalagem", { placeholder: "1 kg" })}</label>
+              <div className="dupla">
+                <label className="campo-c">Tamanho{campo(l, "tamanho", { type: "number", step: "0.001", min: "0", inputMode: "decimal" })}</label>
+                <label className="campo-c">Medida<select id={`med-${l.chave}`} value={l.medida} onChange={(e) => mudar(l.chave, "medida", e.target.value)}><option value="kg">kg</option><option value="L">L</option><option value="un">un.</option></select></label>
+              </div>
+            </div>
+            <div className="grade-valores">
+              <label className="campo-c">Qtd{campo(l, "quantidade", { type: "number", step: "0.001", min: "0", inputMode: "decimal" })}</label>
+              <label className="campo-c">R$ unit.{campo(l, "valor_unitario", { type: "number", step: "0.01", min: "0", inputMode: "decimal" })}</label>
+              <label className="campo-c">Desconto{campo(l, "desconto", { type: "number", step: "0.01", min: "0", inputMode: "decimal" })}</label>
+            </div>
+            <div className="cartao-total"><span className="lbl">Total do item</span><span className="money">{brl(l.valor_total)}</span></div>
+          </article>))}
+      </div>
+      <button className="btn ghost" type="button" onClick={() => setItens([...itens, linhaVazia()])} style={{ alignSelf: "flex-start" }}>+ Adicionar item</button>
       <p className="note">Tamanho na medida escolhida: pacote de 500 g = 0,5 kg; garrafa de 900 ml = 0,9 L; fardo com 12 = 12 un. A granel: tamanho 1, medida kg e a quantidade é o peso (0,750).</p>
-      <div className="row" style={{ justifyContent: "space-between" }}>
-        <button className="btn ghost" type="button" onClick={() => setItens([...itens, linhaVazia()])}>+ Adicionar item</button>
-        <div className="row">
-          <span className="note">
-            {fora.length > 0 && <>cupom {brl(total + totalFora)} − fora do rancho {brl(totalFora)} ({fora.length} {fora.length === 1 ? "item" : "itens"}) · </>}
-            {validos.length} {validos.length === 1 ? "item" : "itens"} · desconto {brl(descontos)} · total lançado <b className="money">{brl(total)}</b></span>
-          <button className="btn" onClick={() => salvar()} disabled={salvando}>{salvando ? "Salvando…" : "Salvar compra"}</button>
+      <div className="resumo-fixo">
+        <div className="resumo-numeros">
+          <span className="lbl">{validos.length} {validos.length === 1 ? "item" : "itens"} · desconto {brl(descontos)}{fora.length > 0 && <> · fora do rancho {brl(totalFora)}</>}</span>
+          <span className="money">{brl(total)}</span>
         </div>
+        <button className="btn" onClick={() => salvar()} disabled={salvando}>{salvando ? "Salvando…" : "Salvar compra"}</button>
       </div>
       {repetida && <div className="banner">
         Esta compra já foi lançada: {repetida.mercado}, {dataBR(repetida.data)}, {brl(repetida.total_pago)}. Salvar de novo vai contar tudo em dobro.
