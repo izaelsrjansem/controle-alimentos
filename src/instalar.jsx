@@ -11,6 +11,12 @@ const ouvintes = new Set();
 addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); convite = e; ouvintes.forEach((f) => f(e)); });
 addEventListener("appinstalled", () => { convite = null; ouvintes.forEach((f) => f(null)); });
 
+const IconeCompartilhar = () => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ verticalAlign: "-3px" }}>
+    <path d="M12 3v12" /><path d="M8 7l4-4 4 4" /><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1" />
+  </svg>
+);
+
 export default function InstalarApp() {
   const [evento, setEvento] = useState(convite);
   const [jaInstalado, setJaInstalado] = useState(instalado);
@@ -43,11 +49,17 @@ export default function InstalarApp() {
           <button type="button" className="x" aria-label="Fechar" onClick={() => dialogo.current.close()}>×</button>
         </div>
         <div className="bd">
-          {ehIOS() ? (
+          {ehIOS() && /CriOS|EdgiOS|FxiOS/.test(navigator.userAgent) ? (
             <ol className="passos">
-              <li>Abra este site no <b>Safari</b>.</li>
-              <li>Toque no botão <b>Compartilhar</b> (o quadrado com a seta para cima), na barra de baixo.</li>
-              <li>Role e toque em <b>Adicionar à Tela de Início</b>, depois em <b>Adicionar</b>.</li>
+              <li>Toque no botão <b>Compartilhar</b> <IconeCompartilhar />, que fica <b>na barra do endereço</b>, ao lado do nome do site (no Firefox, no menu <b>☰</b>).</li>
+              <li>Role a lista para baixo e toque em <b>Adicionar à Tela de Início</b>.</li>
+              <li>Confira o nome <b>Despensa</b> e toque em <b>Adicionar</b>.</li>
+            </ol>
+          ) : ehIOS() ? (
+            <ol className="passos">
+              <li>Toque no botão <b>Compartilhar</b> <IconeCompartilhar />, na barra de baixo do Safari.</li>
+              <li>Role a lista para baixo e toque em <b>Adicionar à Tela de Início</b>.</li>
+              <li>Confira o nome <b>Despensa</b> e toque em <b>Adicionar</b>.</li>
             </ol>
           ) : (
             <ol className="passos">
@@ -56,7 +68,8 @@ export default function InstalarApp() {
               <li>Toque em <b>Instalar app</b> (ou <b>Adicionar à tela inicial</b>) e confirme.</li>
             </ol>
           )}
-          <p className="note">O ícone aparece junto com os outros aplicativos e abre em tela cheia, sem a barra do navegador.</p>
+          <p className="note">O ícone do Despensa aparece junto com os outros aplicativos. Ao tocar nele, o sistema abre em tela cheia, sem a barra de endereço do navegador, e você continua conectado.</p>
+          {ehIOS() && <p className="note">Se não aparecer "Adicionar à Tela de Início", atualize o iPhone (iOS 16.4 ou mais novo) ou abra o site no Safari.</p>}
         </div>
       </dialog>
     </>
