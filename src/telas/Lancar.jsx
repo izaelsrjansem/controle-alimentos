@@ -203,9 +203,14 @@ function Revisao({ dados, inicial, origem, fotos = [], aoSalvar }) {
     return n;
   }));
 
-  const validos = itens.filter((l) => l.nome.trim() && Number(l.quantidade) > 0 && l.valor_unitario !== "");
+  // Na leitura do cupom, item que não é do rancho (lençol, liquidificador...) fica marcado como "fora" e não é salvo
+  const lido = origem !== "manual";
+  const validos = itens.filter((l) => !l.fora && l.nome.trim() && Number(l.quantidade) > 0 && l.valor_unitario !== "");
   const total = validos.reduce((s, l) => s + Number(l.valor_total), 0);
   const descontos = validos.reduce((s, l) => s + Number(l.desconto || 0), 0);
+  const fora = itens.filter((l) => l.fora);
+  const totalFora = fora.reduce((s, l) => s + Number(l.valor_total), 0);
+  const alternarFora = (chave) => setItens((ls) => ls.map((l) => l.chave === chave ? { ...l, fora: !l.fora } : l));
 
   async function salvar(mesmoRepetida = false) {
     if (!cab.mercado.trim() || !cab.data) return setMsg("Informe o mercado e a data da compra.");
@@ -215,6 +220,7 @@ function Revisao({ dados, inicial, origem, fotos = [], aoSalvar }) {
     setSalvando(true); setMsg(null); setRepetida(null);
     const { error } = await supabase.rpc("salvar_compra", { p: {
       mercado: cab.mercado.trim(), data: cab.data, pagamento: cab.pagamento || null, origem, foto_paths: fotos,
+      observacao: fora.length ? `Fora do rancho (${brl(totalFora)}): ${fora.map((l) => l.nome.trim() || l.descricao_cupom).join(", ")}` : null,
       itens: validos.map((l) => ({ nome: l.nome.trim(), categoria: l.categoria, tipo: l.tipo, medida: l.medida,
         descricao_cupom: l.descricao_cupom, marca: l.marca, embalagem: l.embalagem, tamanho: Number(l.tamanho) || 1,
         quantidade: Number(l.quantidade), valor_unitario: Number(l.valor_unitario), desconto: Number(l.desconto) || 0, valor_total: Number(l.valor_total) })),
@@ -237,10 +243,11 @@ function Revisao({ dados, inicial, origem, fotos = [], aoSalvar }) {
       <datalist id="lista-mercados">{mercados.map((m) => <option key={m} value={m} />)}</datalist>
       <datalist id="lista-itens">{dados.itens.map((g) => <option key={g.id} value={g.nome} />)}</datalist>
 
+      {lido && <p className="note">Item que não é do rancho (lençol, liquidificador, eletrônico...)? Toque em <b>Fora do rancho</b> na linha dele: o item não é lançado e o total é recalculado só com o que fica.</p>}
       <div className="tablewrap"><table className="revisao">
         <thead><tr><th>Item</th><th>Marca</th><th>Categoria</th><th>Embalagem</th><th className="r">Tam.</th><th>Medida</th><th className="r">Qtd</th><th className="r">R$ unit.</th><th className="r">Desc.</th><th className="r">Total</th><th /></tr></thead>
         <tbody>{itens.map((l) => (
-          <tr key={l.chave} className={l.duvida ? "duvida" : ""}>
+          <tr key={l.chave} className={l.fora ? "fora" : l.duvida ? "duvida" : ""}>
             <td style={{ minWidth: 170 }}>{campo(l, "nome", { list: "lista-itens", onBlur: () => completar(l.chave), placeholder: "Arroz tipo 1" })}
               {l.descricao_cupom && <div className="note">{l.descricao_cupom}</div>}</td>
             <td style={{ minWidth: 100 }}>{campo(l, "marca")}</td>
@@ -252,14 +259,18 @@ function Revisao({ dados, inicial, origem, fotos = [], aoSalvar }) {
             <td style={{ width: 80 }}>{campo(l, "valor_unitario", { type: "number", step: "0.01", min: "0" })}</td>
             <td style={{ width: 70 }}>{campo(l, "desconto", { type: "number", step: "0.01", min: "0" })}</td>
             <td className="r money">{brl(l.valor_total)}</td>
-            <td><button className="x" type="button" aria-label="Remover item" onClick={() => setItens((ls) => ls.filter((x) => x.chave !== l.chave))}>×</button></td>
+            <td>{lido
+              ? <button className="btn ghost" type="button" style={{ whiteSpace: "nowrap" }} onClick={() => alternarFora(l.chave)}>{l.fora ? "Incluir de novo" : "Fora do rancho"}</button>
+              : <button className="x" type="button" aria-label="Remover item" onClick={() => setItens((ls) => ls.filter((x) => x.chave !== l.chave))}>×</button>}</td>
           </tr>))}</tbody>
       </table></div>
       <p className="note">Tamanho na medida escolhida: pacote de 500 g = 0,5 kg; garrafa de 900 ml = 0,9 L; fardo com 12 = 12 un. A granel: tamanho 1, medida kg e a quantidade é o peso (0,750).</p>
       <div className="row" style={{ justifyContent: "space-between" }}>
         <button className="btn ghost" type="button" onClick={() => setItens([...itens, linhaVazia()])}>+ Adicionar item</button>
         <div className="row">
-          <span className="note">{validos.length} itens · desconto {brl(descontos)} · total <b className="money">{brl(total)}</b></span>
+          <span className="note">
+            {fora.length > 0 && <>cupom {brl(total + totalFora)} − fora do rancho {brl(totalFora)} ({fora.length} {fora.length === 1 ? "item" : "itens"}) · </>}
+            {validos.length} itens · desconto {brl(descontos)} · total lançado <b className="money">{brl(total)}</b></span>
           <button className="btn" onClick={() => salvar()} disabled={salvando}>{salvando ? "Salvando…" : "Salvar compra"}</button>
         </div>
       </div>
