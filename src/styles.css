@@ -341,7 +341,8 @@ code{font-family:var(--font-mono);font-size:.85em;color:var(--accent)}
 .cartao-total .money{font-size:1.3rem;font-weight:600;color:var(--accent)}
 .cartao-edit.duvida{border-color:rgba(251,191,36,.6);box-shadow:0 0 0 1px rgba(251,191,36,.35),0 10px 28px rgba(0,0,0,.25)}
 .cartao-edit.duvida::before{background:linear-gradient(90deg,var(--warn),#fde68a)}
-.cartao-edit.fora{opacity:.5}
+.cartao-edit.fora > :not(.cartao-cab){opacity:.45}
+.cartao-cab .tag{white-space:nowrap}
 .cartao-edit.fora .campo-c.nome input{text-decoration:line-through}
 .cartao-edit.fora::before{background:#6b7a93}
 .tag.aviso{background:var(--warn-soft);color:var(--warn);border-color:rgba(251,191,36,.4)}
