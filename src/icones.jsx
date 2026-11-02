@@ -15,14 +15,21 @@ export const ICONES = {
 
 // Marca: hexágono com a "lista do cupom" dentro
 export const Logo = () => (
+  // Sacola de compras (a despensa) com uma folha brotando (alimento) e as linhas do cupom dentro
   <svg viewBox="0 0 48 48" aria-hidden="true">
     <defs>
       <linearGradient id="lg-marca" x1="0" y1="0" x2="1" y2="1">
         <stop offset="0" stopColor="#22d3ee" /><stop offset="1" stopColor="#a78bfa" />
       </linearGradient>
+      <linearGradient id="lg-folha" x1="0" y1="1" x2="1" y2="0">
+        <stop offset="0" stopColor="#34d399" /><stop offset="1" stopColor="#a3e635" />
+      </linearGradient>
     </defs>
-    <path d="M24 3l18 10.5v21L24 45 6 34.5v-21z" fill="rgba(34,211,238,.08)" stroke="url(#lg-marca)" strokeWidth="2.5" strokeLinejoin="round" />
-    <path d="M16 18h16M16 24h11M16 30h7" stroke="url(#lg-marca)" strokeWidth="3" strokeLinecap="round" />
-    <circle cx="32" cy="30" r="2.6" fill="#22d3ee" />
+    <path d="M17 17v-3a7 7 0 0 1 14 0v3" fill="none" stroke="url(#lg-marca)" strokeWidth="2.6" strokeLinecap="round" />
+    <path d="M9 17h30l-2.4 23.2a3 3 0 0 1-3 2.8H14.4a3 3 0 0 1-3-2.8z" fill="rgba(34,211,238,.10)" stroke="url(#lg-marca)" strokeWidth="2.6" strokeLinejoin="round" />
+    <path d="M17 26h14M17 32h9" stroke="url(#lg-marca)" strokeWidth="2.8" strokeLinecap="round" />
+    <circle cx="31" cy="32" r="2.4" fill="#22d3ee" />
+    <path d="M33 13c1-6 6-9 11-8-.5 5.5-4.5 9.5-11 8z" fill="url(#lg-folha)" />
+    <path d="M33.6 12.4c2.2-2.6 4.6-4.2 7.4-5.2" stroke="rgba(4,19,13,.45)" strokeWidth="1" strokeLinecap="round" fill="none" />
   </svg>
 );

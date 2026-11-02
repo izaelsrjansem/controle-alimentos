@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../supabase.js";
-import { lerPreferencia, salvarPreferencia } from "../tema.js";
+import { lerPreferencia, salvarPreferencia, PALETAS, lerPaleta, salvarPaleta } from "../tema.js";
 import { CampoSenha } from "./Login.jsx";
 import { lerBloqueio, salvarBloqueio, biometriaDisponivel, cadastrarBiometria } from "../bloqueio.jsx";
 
@@ -154,10 +154,19 @@ function MinhaConta({ membro, email }) {
 /* ---------- Aparência: vale para este aparelho ---------- */
 function Aparencia() {
   const [pref, setPref] = useState(lerPreferencia);
+  const [paleta, setPaleta] = useState(lerPaleta);
   const escolher = (p) => { salvarPreferencia(p); setPref(p); };
   return (
     <div className="panel">
       <h2>Aparência</h2>
+      <div className="lbl">Tema</div>
+      <div className="opcoes paletas" role="group" aria-label="Tema de cores">
+        {PALETAS.map(([k, t, d, [c1, c2]]) => (
+          <button key={k} type="button" aria-pressed={paleta === k} onClick={() => { salvarPaleta(k); setPaleta(k); }}>
+            <span className="amostra" style={{ background: `linear-gradient(135deg, ${c1}, ${c2})` }} aria-hidden="true" />
+            <span><b>{t}</b><br /><small>{d}</small></span></button>))}
+      </div>
+      <div className="lbl">Claro ou escuro</div>
       <div className="opcoes" role="group" aria-label="Tema da tela">
         {[["auto", "Automática", "Clara de dia (6h às 18h), escura à noite"], ["escuro", "Escura", "Sempre escura"], ["claro", "Clara", "Sempre clara"]].map(([k, t, d]) => (
           <button key={k} type="button" aria-pressed={pref === k} onClick={() => escolher(k)}><b>{t}</b><small>{d}</small></button>))}

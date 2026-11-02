@@ -8,9 +8,26 @@ export function lerPreferencia() {
 
 const temaDoHorario = () => { const h = new Date().getHours(); return h >= 6 && h < 18 ? "claro" : "escuro"; };
 
+// Paleta de cores com desenho de fundo: padrao, masculino, feminino, comida, casa
+export const PALETAS = [
+  ["padrao", "Padrão", "Ciano e violeta", ["#22d3ee", "#a78bfa"]],
+  ["masculino", "Masculino", "Azul e grafite", ["#60a5fa", "#94a3b8"]],
+  ["feminino", "Feminino", "Rosa e lilás, com flores", ["#f472b6", "#c084fc"]],
+  ["comida", "Comida", "Laranja e tomate, com frutas", ["#fb923c", "#ef4444"]],
+  ["casa", "Casa", "Verde e terracota, com casinhas", ["#4ade80", "#d97706"]],
+];
+export function lerPaleta() {
+  try { return localStorage.getItem("paleta") || "padrao"; } catch { return "padrao"; }
+}
+export function salvarPaleta(p) {
+  try { localStorage.setItem("paleta", p); } catch { /* vale só nesta visita */ }
+  aplicarTema();
+}
+
 export function aplicarTema(pref = lerPreferencia()) {
   const tema = pref === "auto" ? temaDoHorario() : pref;
   document.documentElement.dataset.theme = tema;
+  document.documentElement.dataset.paleta = lerPaleta();
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", COR_BARRA[tema]);
   return tema;
 }

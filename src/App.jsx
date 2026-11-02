@@ -77,14 +77,17 @@ function Painel({ email, userId }) {
             <div className="logo"><Logo /><div><small>Sistema de compras</small><h1>Despensa e Preços</h1></div></div>
             <span className="status"><InstalarApp /><span className="pulso" aria-hidden="true" />{membro?.nome || email} ·<button className="sair" onClick={() => supabase.auth.signOut()}>Sair</button></span>
           </div>
-          <nav className="tabs" role="tablist" aria-label="Seções">
-            {ABAS.map(([k, rotulo, curto]) => (
-              <button key={k} role="tab" aria-selected={aba === k} aria-label={rotulo} onClick={() => ir(k)}>
-                {ICONES[k]}<span className="longo">{rotulo}</span><span className="curto">{curto}</span></button>
-            ))}
-          </nav>
         </div>
       </header>
+      {/* fora do cabeçalho: no iPhone, o vidro do cabeçalho prenderia a barra dentro dele */}
+      <nav className="tabs" role="tablist" aria-label="Seções">
+        <div className="wrap tabs-trilho">
+          {ABAS.map(([k, rotulo, curto]) => (
+            <button key={k} role="tab" aria-selected={aba === k} aria-label={rotulo} onClick={() => ir(k)}>
+              {ICONES[k]}<span className="longo">{rotulo}</span><span className="curto">{curto}</span></button>
+          ))}
+        </div>
+      </nav>
       <main>
         <section className="wrap">
           {dados.erro && <div className="erro">Não consegui ler seus dados: {dados.erro}</div>}
