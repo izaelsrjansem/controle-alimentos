@@ -56,7 +56,7 @@ export default function Login() {
   );
 }
 
-export function NovaSenha({ aoConcluir }) {
+export function NovaSenha({ aoConcluir, convite = false }) {
   const [senha, setSenha] = useState("");
   const [msg, setMsg] = useState(null);
   async function salvar(e) {
@@ -68,7 +68,8 @@ export function NovaSenha({ aoConcluir }) {
   return (
     <div className="login wrap">
       <form className="panel" onSubmit={salvar}>
-        <h1>Criar senha nova</h1>
+        <div className="logo"><Logo /><div><small>Despensa e Preços</small><h1>{convite ? "Bem-vindo(a)! Crie sua senha" : "Criar senha nova"}</h1></div></div>
+        {convite && <p className="note">Você foi convidado(a) para a casa. Depois de criar a senha, já entra com as compras, itens e preços compartilhados.</p>}
         <input id="nova-senha" type="password" minLength={8} required autoComplete="new-password" placeholder="Nova senha (mínimo 8 caracteres)"
           value={senha} onChange={(e) => setSenha(e.target.value)} />
         {msg && <div className="erro">{msg}</div>}
