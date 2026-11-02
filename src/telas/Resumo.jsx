@@ -16,6 +16,7 @@ export default function Resumo({ dados, ir }) {
   const [apagando, setApagando] = useState(null);
   const [importando, setImportando] = useState(false);
   const [aberta, setAberta] = useState(null);
+  const [exportando, setExportando] = useState(false);
   const { recarregar } = dados;
   const aoMudarItens = useCallback((texto) => { setAviso({ tipo: "ok", texto }); recarregar(); }, [recarregar]);
   const aoErroItens = useCallback((texto) => setAviso({ tipo: "erro", texto }), []);
@@ -76,13 +77,15 @@ export default function Resumo({ dados, ir }) {
     dados.recarregar();
   }
 
-  function exportar(todos) {
-    const sel = todos ? precos.filter((r) => r.origem === "compra") : linhas;
+  // planilha das compras entre duas datas (AAAA-MM-DD, as duas incluídas)
+  function exportar(de, ate, nome) {
+    const sel = precos.filter((r) => r.origem === "compra" && r.data >= de && r.data <= ate)
+      .sort((a, b) => a.data.localeCompare(b.data));
     const cab = ["Data", "Mercado", "Item", "Categoria", "Tipo", "Marca", "Embalagem", "Quantidade", "Valor unitário", "Desconto", "Valor pago", "Preço por medida", "Medida"];
     const rows = sel.map((r) => { const p = r.p ?? prod.get(r.produto_id) ?? {};
       return [dataBR(r.data), r.mercado, p.nome, p.categoria, p.tipo, r.marca ?? "", r.embalagem ?? "", r.quantidade,
         r.valor_unitario, r.desconto, r.valor_total, Math.round(r.preco_referencia * 100) / 100, medidaTxt[p.medida]]; });
-    baixarCSV(todos ? "compras-todas.csv" : `compras-${mes}.csv`, cab, rows);
+    baixarCSV(nome, cab, rows);
   }
 
   if (!compras.length) {
@@ -108,11 +111,10 @@ export default function Resumo({ dados, ir }) {
           <strong>{nomeMes(mes)}</strong>
           <button aria-label="Próximo mês" onClick={() => setMes(somarMes(mes, 1))}>›</button>
         </div>
-        <div className="row">
-          <button className="btn ghost" onClick={() => exportar(false)} disabled={!linhas.length}>Exportar o mês (planilha)</button>
-          <button className="btn ghost" onClick={() => exportar(true)}>Exportar tudo</button>
-        </div>
+        <button className="btn ghost" onClick={() => setExportando(!exportando)} aria-expanded={exportando}>
+          {exportando ? "Fechar exportação" : "Exportar planilha"}</button>
       </div>
+      {exportando && <Exportar precos={precos} mesAtualTela={mes} exportar={exportar} fechar={() => setExportando(false)} />}
       {aviso && <div className={aviso.tipo}>{aviso.texto}</div>}
       {repetidas.size > 0 && <div className="banner">
         {repetidas.size === 1 ? "Uma compra parece ter sido lançada duas vezes" : `${repetidas.size} compras parecem ter sido lançadas duas vezes`} (mesma data, mercado e total).
@@ -266,3 +268,72 @@ function ItensDaCompra({ compra, prod, aoMudar, aoErro }) {
     </>
   );
 }
+
+/* ---------- Exportar planilha: mês inteiro ou período livre (até hoje) ---------- */
+const doisDig = (n) => String(n).padStart(2, "0");
+const isoDe = (d) => `${d.getFullYear()}-${doisDig(d.getMonth() + 1)}-${doisDig(d.getDate())}`;
+const ultimoDia = (aaaamm) => { const [a, m] = aaaamm.split("-").map(Number); return `${aaaamm}-${doisDig(new Date(a, m, 0).getDate())}`; };
+const menosDias = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return isoDe(d); };
+
+function Exportar({ precos, mesAtualTela, exportar, fechar }) {
+  const hoje = hojeIso();
+  const mesHoje = hoje.slice(0, 7);
+  const [modo, setModo] = useState("mes");
+  const [mesEsc, setMesEsc] = useState(mesAtualTela > mesHoje ? mesHoje : mesAtualTela);
+  const [de, setDe] = useState(`${mesHoje}-01`);
+  const [ate, setAte] = useState(hoje);
+
+  // mês inteiro vai do dia 1 ao último dia; nunca passa de hoje
+  const faixa = modo === "mes"
+    ? [`${mesEsc}-01`, ultimoDia(mesEsc) > hoje ? hoje : ultimoDia(mesEsc)]
+    : [de, ate > hoje ? hoje : ate];
+  const erro = !faixa[0] || !faixa[1] ? "Escolha as datas." : faixa[0] > faixa[1] ? "A data inicial está depois da final." : faixa[0] > hoje ? "A data inicial não pode passar de hoje." : null;
+  const qtd = erro ? 0 : precos.filter((r) => r.origem === "compra" && r.data >= faixa[0] && r.data <= faixa[1]).length;
+  const dias = erro ? 0 : Math.round((new Date(faixa[1]) - new Date(faixa[0])) / 86400000) + 1;
+  const atalho = (d, a) => { setModo("periodo"); setDe(d); setAte(a); };
+
+  function baixar() {
+    const nome = modo === "mes" ? `compras-${mesEsc}.csv` : `compras-${faixa[0]}-a-${faixa[1]}.csv`;
+    exportar(faixa[0], faixa[1], nome);
+    fechar();
+  }
+
+  return (
+    <div className="panel exportar">
+      <h2>Exportar planilha</h2>
+      <div className="opcoes" role="group" aria-label="Como escolher o período">
+        <button type="button" aria-pressed={modo === "mes"} onClick={() => setModo("mes")}><b>Mês inteiro</b><small>Do dia 1 ao último dia do mês</small></button>
+        <button type="button" aria-pressed={modo === "periodo"} onClick={() => setModo("periodo")}><b>Período</b><small>De uma data até outra, quantos dias quiser</small></button>
+      </div>
+      {modo === "mes" ? (
+        <label className="campo-c">Mês<input type="month" value={mesEsc} max={mesHoje} onChange={(e) => e.target.value && setMesEsc(e.target.value)} /></label>
+      ) : (
+        <div className="grade-campos">
+          <label className="campo-c">De<input type="date" value={de} max={hoje} onChange={(e) => setDe(e.target.value)} /></label>
+          <label className="campo-c">Até<input type="date" value={ate} min={de} max={hoje} onChange={(e) => setAte(e.target.value)} /></label>
+        </div>
+      )}
+      <div className="row atalhos">
+        <span className="lbl">Atalhos</span>
+        <button type="button" className="chip" onClick={() => { setModo("mes"); setMesEsc(mesHoje); }}>Este mês</button>
+        <button type="button" className="chip" onClick={() => { setModo("mes"); setMesEsc(somarMesIso(mesHoje, -1)); }}>Mês passado</button>
+        <button type="button" className="chip" onClick={() => atalho(menosDias(6), hoje)}>Últimos 7 dias</button>
+        <button type="button" className="chip" onClick={() => atalho(menosDias(29), hoje)}>Últimos 30 dias</button>
+        <button type="button" className="chip" onClick={() => atalho(menosDias(89), hoje)}>Últimos 90 dias</button>
+        <button type="button" className="chip" onClick={() => atalho(precos.filter((r) => r.origem === "compra").reduce((m, r) => (r.data < m ? r.data : m), hoje), hoje)}>Tudo</button>
+      </div>
+      {erro ? <div className="erro">{erro}</div> : (
+        <p className="note">De <b>{dataBR(faixa[0])}</b> a <b>{dataBR(faixa[1])}</b> · {dias} {dias === 1 ? "dia" : "dias"} · <b>{qtd}</b> {qtd === 1 ? "item comprado" : "itens comprados"}.
+          {modo === "mes" && faixa[1] === hoje && ultimoDia(mesEsc) > hoje && " O mês ainda não acabou: vai até hoje."}</p>
+      )}
+      <div className="row">
+        <button className="btn" type="button" onClick={baixar} disabled={!!erro || !qtd}>Baixar planilha</button>
+        <button className="btn ghost" type="button" onClick={fechar}>Cancelar</button>
+      </div>
+      <p className="note">A planilha abre direto no Excel. Itens marcados como fora do rancho não entram.</p>
+    </div>
+  );
+}
+
+const hojeIso = () => isoDe(new Date());
+const somarMesIso = (aaaamm, delta) => { const [a, m] = aaaamm.split("-").map(Number); const d = new Date(a, m - 1 + delta, 1); return `${d.getFullYear()}-${doisDig(d.getMonth() + 1)}`; };

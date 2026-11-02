@@ -505,3 +505,7 @@ button.btn.perigo{background:var(--bad);color:#fff;box-shadow:0 6px 18px rgb(244
 .figura[aria-pressed="true"]{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
 .mini-foto{width:56px;height:56px;object-fit:cover;border-radius:10px;border:1px solid var(--line-strong)}
 input[type="range"]{padding:0;accent-color:var(--accent)}
+.exportar{border-color:rgb(var(--acc-rgb) / .45);box-shadow:var(--glow)}
+.atalhos{gap:6px}
+.chip{font:inherit;font-size:.8rem;padding:6px 12px;border-radius:999px;border:1px solid var(--line-strong);background:var(--raise);color:var(--fg);cursor:pointer}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
