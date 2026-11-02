@@ -1,20 +1,48 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../supabase.js";
-import { lerPreferencia, salvarPreferencia, PALETAS, lerPaleta, salvarPaleta } from "../tema.js";
+import { lerPreferencia, salvarPreferencia, PALETAS, lerPaleta, salvarPaleta, FIGURAS, gerarFundo,
+  lerPersonalizado, salvarPersonalizado, lerFotoFundo, salvarFotoFundo, prepararFotoFundo, vibrar } from "../tema.js";
 import { CampoSenha } from "./Login.jsx";
 import { lerBloqueio, salvarBloqueio, biometriaDisponivel, cadastrarBiometria } from "../bloqueio.jsx";
 
 const quando = (iso) => iso ? new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" }) : "nunca";
 const registrar = (acao, descricao) => supabase.rpc("registrar", { p_acao: acao, p_descricao: descricao ?? null }).then(() => {}, () => {});
 
-export default function Ajustes({ membro, email }) {
+const ICONE = {
+  conta: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0",
+  seguranca: "M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l2 2 4-4",
+  aparencia: "M12 3a9 9 0 1 0 0 18c1 0 1.5-.8 1.5-1.6 0-1.4-1.2-1.6-1.2-2.8 0-1 .8-1.6 1.8-1.6H17a4 4 0 0 0 4-4c0-4.4-4-8-9-8zM7.5 11.5h.01M10.5 7.5h.01M15.5 7.5h.01",
+  usuarios: "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21a7 7 0 0 1 14 0M17 3.5a4 4 0 0 1 0 7.5M22 21a7 7 0 0 0-4-6.3",
+  convidar: "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21a7 7 0 0 1 14 0M19 8v6M16 11h6",
+  auditoria: "M9 4h6a1 1 0 0 1 1 1v1H8V5a1 1 0 0 1 1-1zM8 5H6a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M8 12h8M8 16h5",
+};
+
+// Item do menu de Ajustes: só mostra o conteúdo quando tocado
+function Secao({ id, titulo, desc, aberta, alternar, children }) {
   return (
-    <>
-      <MinhaConta membro={membro} email={email} />
-      <Seguranca email={email} />
-      <Aparencia />
-      {membro?.papel === "admin" && <Administracao />}
-    </>
+    <section className={"secao" + (aberta ? " aberta" : "")}>
+      <button type="button" className="secao-titulo" onClick={() => { vibrar(); alternar(id); }} aria-expanded={aberta} aria-controls={"sec-" + id}>
+        <span className="secao-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={ICONE[id]} /></svg></span>
+        <span className="secao-texto"><b>{titulo}</b><small>{desc}</small></span>
+        <span className="secao-seta" aria-hidden="true">›</span>
+      </button>
+      {aberta && <div className="secao-corpo" id={"sec-" + id}>{children}</div>}
+    </section>
+  );
+}
+
+export default function Ajustes({ membro, email }) {
+  const [aberta, setAberta] = useState(null);
+  const alternar = (id) => setAberta((a) => (a === id ? null : id));
+  const secao = (id, titulo, desc, conteudo) => (
+    <Secao key={id} id={id} titulo={titulo} desc={desc} aberta={aberta === id} alternar={alternar}>{conteudo}</Secao>);
+  return (
+    <div className="menu-ajustes">
+      {secao("conta", "Minha conta", "Alterar senha, sair", <MinhaConta membro={membro} email={email} />)}
+      {secao("seguranca", "Segurança deste aparelho", "Bloqueio por tempo e Face ID", <Seguranca email={email} />)}
+      {secao("aparencia", "Aparência e temas", "Claro, escuro, temas e o seu tema", <Aparencia />)}
+      {membro?.papel === "admin" && <Administracao secao={secao} />}
+    </div>
   );
 }
 
@@ -27,6 +55,7 @@ function Seguranca({ email }) {
   const [cfg, setCfg] = useState(lerBloqueio);
   const [temBio, setTemBio] = useState(null);
   const [pers, setPers] = useState({ valor: "", unidade: "60" });
+  const [escolhendoPers, setEscolhendoPers] = useState(false);
   const [msg, setMsg] = useState(null);
   useEffect(() => { biometriaDisponivel().then(setTemBio); }, []);
 
@@ -38,6 +67,7 @@ function Seguranca({ email }) {
     const s = Math.round(Number(String(pers.valor).replace(",", ".")) * Number(pers.unidade));
     if (!s || s < 30) return setMsg({ tipo: "erro", texto: "O tempo mínimo é 30 segundos." });
     if (s > 24 * 3600) return setMsg({ tipo: "erro", texto: "O tempo máximo é 24 horas." });
+    vibrar(); setEscolhendoPers(false);
     mudar({ segundos: s }); setMsg({ tipo: "ok", texto: `Bloqueio depois de ${formatarTempo(s)} sem uso.` });
   }
 
@@ -58,22 +88,28 @@ function Seguranca({ email }) {
       <h2>Segurança deste aparelho</h2>
       <p className="note">Depois do tempo escolhido sem mexer no app, a tela fecha e pede o Face ID (ou a digital) ou a senha. Também vale quando você sai do app e volta depois.</p>
 
-      <div className="lbl">Fechar a tela depois de</div>
-      <div className="opcoes tempos" role="group" aria-label="Tempo sem uso">
-        {TEMPOS.map(([s, t]) => <button key={s} type="button" aria-pressed={cfg.segundos === s} onClick={() => { mudar({ segundos: s }); setMsg(null); }}><b>{t}</b></button>)}
-        <button type="button" aria-pressed={personalizado} onClick={() => document.getElementById("tempo-pers")?.focus()}><b>{personalizado ? formatarTempo(cfg.segundos) : "Personalizado"}</b></button>
-      </div>
-      <form className="row" onSubmit={aplicarPersonalizado} noValidate>
+      <label className="campo-c" htmlFor="tempo-bloqueio">Fechar a tela depois de
+        <select id="tempo-bloqueio" className="lista-grande" value={personalizado || escolhendoPers ? "pers" : String(cfg.segundos)}
+          onChange={(e) => {
+            vibrar(); setMsg(null);
+            if (e.target.value === "pers") { setEscolhendoPers(true); setTimeout(() => document.getElementById("tempo-pers")?.focus(), 50); return; }
+            setEscolhendoPers(false); mudar({ segundos: Number(e.target.value) });
+          }}>
+          {TEMPOS.map(([s, t]) => <option key={s} value={s}>{s ? t + " sem uso" : t}</option>)}
+          <option value="pers">{personalizado ? `Personalizado: ${formatarTempo(cfg.segundos)}` : "Personalizado…"}</option>
+        </select>
+      </label>
+      {(personalizado || escolhendoPers) && <form className="row" onSubmit={aplicarPersonalizado} noValidate>
         <input id="tempo-pers" type="number" inputMode="decimal" min="0" step="any" placeholder="Ex.: 45" value={pers.valor} onChange={(e) => setPers({ ...pers, valor: e.target.value })} style={{ width: 110 }} aria-label="Tempo personalizado" />
-        <select value={pers.unidade} onChange={(e) => setPers({ ...pers, unidade: e.target.value })} style={{ width: "auto" }} aria-label="Unidade">
+        <select value={pers.unidade} onChange={(e) => { vibrar(); setPers({ ...pers, unidade: e.target.value }); }} style={{ width: "auto" }} aria-label="Unidade">
           <option value="1">segundos</option><option value="60">minutos</option><option value="3600">horas</option></select>
         <button className="btn ghost" type="submit">Usar este tempo</button>
-      </form>
+      </form>}
 
       <div className="lbl">Quando o tempo acabar</div>
       <div className="opcoes" role="group" aria-label="O que fazer">
-        <button type="button" aria-pressed={cfg.acao === "bloquear"} onClick={() => mudar({ acao: "bloquear" })}><b>Bloquear a tela</b><small>Libera com Face ID, digital ou senha</small></button>
-        <button type="button" aria-pressed={cfg.acao === "sair"} onClick={() => mudar({ acao: "sair" })}><b>Sair da conta</b><small>Faz logout; para voltar, e-mail e senha</small></button>
+        <button type="button" aria-pressed={cfg.acao === "bloquear"} onClick={() => { vibrar(); mudar({ acao: "bloquear" }); }}><b>Bloquear a tela</b><small>Libera com Face ID, digital ou senha</small></button>
+        <button type="button" aria-pressed={cfg.acao === "sair"} onClick={() => { vibrar(); mudar({ acao: "sair" }); }}><b>Sair da conta</b><small>Faz logout; para voltar, e-mail e senha</small></button>
       </div>
 
       <div className="lbl">Face ID / digital</div>
@@ -155,23 +191,83 @@ function MinhaConta({ membro, email }) {
 function Aparencia() {
   const [pref, setPref] = useState(lerPreferencia);
   const [paleta, setPaleta] = useState(lerPaleta);
-  const escolher = (p) => { salvarPreferencia(p); setPref(p); };
+  const escolher = (p) => { vibrar(); salvarPreferencia(p); setPref(p); };
+  const escolherTema = (k) => { vibrar(); salvarPaleta(k); setPaleta(k); };
   return (
     <div className="panel">
       <h2>Aparência</h2>
-      <div className="lbl">Tema</div>
-      <div className="opcoes paletas" role="group" aria-label="Tema de cores">
-        {PALETAS.map(([k, t, d, [c1, c2]]) => (
-          <button key={k} type="button" aria-pressed={paleta === k} onClick={() => { salvarPaleta(k); setPaleta(k); }}>
-            <span className="amostra" style={{ background: `linear-gradient(135deg, ${c1}, ${c2})` }} aria-hidden="true" />
-            <span><b>{t}</b><br /><small>{d}</small></span></button>))}
-      </div>
       <div className="lbl">Claro ou escuro</div>
-      <div className="opcoes" role="group" aria-label="Tema da tela">
+      <div className="opcoes" role="group" aria-label="Claro ou escuro">
         {[["auto", "Automática", "Clara de dia (6h às 18h), escura à noite"], ["escuro", "Escura", "Sempre escura"], ["claro", "Clara", "Sempre clara"]].map(([k, t, d]) => (
           <button key={k} type="button" aria-pressed={pref === k} onClick={() => escolher(k)}><b>{t}</b><small>{d}</small></button>))}
       </div>
-      <p className="note">A escolha fica guardada neste aparelho.</p>
+      <div className="lbl">Tema</div>
+      <div className="temas" role="group" aria-label="Tema">
+        {PALETAS.map(([k, t, d, [c1, c2], figuras]) => {
+          const pers = k === "personalizado" ? lerPersonalizado() : null;
+          const fundo = gerarFundo(pers ? pers.figuras : figuras, pers ? pers.cor1 : c1, 0.55, 0.5);
+          return (
+            <button key={k} type="button" className="tema" aria-pressed={paleta === k} onClick={() => escolherTema(k)}>
+              <span className="tema-amostra" aria-hidden="true"
+                style={{ backgroundImage: `${fundo === "none" ? "" : fundo + ","}linear-gradient(135deg, ${pers ? pers.cor1 : c1}33, ${pers ? pers.cor2 : c2}55)` }}>
+                <i style={{ background: `linear-gradient(135deg, ${pers ? pers.cor1 : c1}, ${pers ? pers.cor2 : c2})` }} />
+              </span>
+              <b>{t}</b><small>{d}</small>
+            </button>);
+        })}
+      </div>
+      {paleta === "personalizado" && <MeuTema />}
+      <p className="note">A escolha fica guardada neste aparelho. Cada pessoa da casa pode usar um tema diferente.</p>
+    </div>
+  );
+}
+
+/* ---------- Meu tema: cores, desenhos de fundo e foto ---------- */
+function MeuTema() {
+  const [c, setC] = useState(lerPersonalizado);
+  const [foto, setFoto] = useState(lerFotoFundo);
+  const [msg, setMsg] = useState(null);
+  const mudar = (novo) => { const n = { ...c, ...novo }; setC(n); salvarPersonalizado(n); };
+  const alternarFigura = (f) => { vibrar(); mudar({ figuras: c.figuras.includes(f) ? c.figuras.filter((x) => x !== f) : [...c.figuras, f] }); };
+
+  async function escolherFoto(e) {
+    const a = e.target.files?.[0]; e.target.value = "";
+    if (!a) return;
+    setMsg(null);
+    try { const d = await prepararFotoFundo(a); salvarFotoFundo(d); setFoto(d); vibrar(); }
+    catch (erro) { setMsg(erro.message || "Não consegui usar essa foto."); }
+  }
+
+  return (
+    <div className="meu-tema">
+      <div className="lbl">Cores</div>
+      <div className="row">
+        <label className="cor"><input type="color" value={c.cor1} onChange={(e) => mudar({ cor1: e.target.value })} /> Principal</label>
+        <label className="cor"><input type="color" value={c.cor2} onChange={(e) => mudar({ cor2: e.target.value })} /> Secundária</label>
+      </div>
+      <div className="lbl">Desenhos de fundo <span className="note">({c.figuras.length} escolhidos)</span></div>
+      <div className="figuras">
+        {Object.entries(FIGURAS).map(([k, [nome, d]]) => (
+          <button key={k} type="button" className="figura" aria-pressed={c.figuras.includes(k)} onClick={() => alternarFigura(k)} title={nome}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={d} /></svg>
+            <small>{nome}</small>
+          </button>))}
+      </div>
+      <div className="grade-campos">
+        <label className="campo-c">Intensidade
+          <input type="range" min="0.05" max="0.3" step="0.01" value={c.intensidade} onChange={(e) => mudar({ intensidade: Number(e.target.value) })} /></label>
+        <label className="campo-c">Tamanho dos desenhos
+          <input type="range" min="0.6" max="1.6" step="0.1" value={c.escala} onChange={(e) => { vibrar(); mudar({ escala: Number(e.target.value) }); }} /></label>
+      </div>
+      <div className="lbl">Foto de fundo (opcional)</div>
+      <div className="row">
+        <label className="btn ghost" style={{ display: "inline-flex" }}>{foto ? "Trocar foto" : "Escolher foto"}
+          <input type="file" accept="image/*" hidden onChange={escolherFoto} /></label>
+        {foto && <><img src={foto} alt="Foto de fundo escolhida" className="mini-foto" />
+          <button className="sair" type="button" onClick={() => { salvarFotoFundo(null); setFoto(null); }}>Tirar a foto</button></>}
+      </div>
+      <p className="note">A foto fica com um véu por cima para os textos continuarem fáceis de ler.</p>
+      {msg && <div className="erro">{msg}</div>}
     </div>
   );
 }
@@ -187,7 +283,7 @@ async function chamar(corpo) {
   return data;
 }
 
-function Administracao() {
+function Administracao({ secao }) {
   const [usuarios, setUsuarios] = useState(null);
   const [aviso, setAviso] = useState(null);
   const [link, setLink] = useState(null);
@@ -213,9 +309,9 @@ function Administracao() {
     <>
       {aviso && <div className={aviso.tipo}>{aviso.texto}</div>}
       {link && <LinkParaCopiar {...link} />}
-      <Usuarios usuarios={usuarios} executar={executar} />
-      <Convidar executar={executar} />
-      <Auditoria usuarios={usuarios} />
+      {secao("usuarios", "Usuários da casa", usuarios ? `${usuarios.length} ${usuarios.length === 1 ? "pessoa" : "pessoas"} · senhas e permissões` : "Quem usa o sistema", <Usuarios usuarios={usuarios} executar={executar} />)}
+      {secao("convidar", "Convidar alguém", "Link pelo WhatsApp ou e-mail", <Convidar executar={executar} />)}
+      {secao("auditoria", "Auditoria", "Quem entrou e o que fez", <Auditoria usuarios={usuarios} />)}
     </>
   );
 }
