@@ -307,3 +307,13 @@ code{font-family:var(--font-mono);font-size:.85em;color:var(--accent)}
 @media (max-width:720px){.cartoes{grid-template-columns:1fr}}
 .trocar-senha{display:flex;flex-direction:column;gap:12px;max-width:420px}
 .conta{display:flex;align-items:center;gap:12px}
+
+/* ---------- itens: mesmos cartões da lista, faixa pela situação em casa ---------- */
+.cartao[data-s="tenho"]::before{background:linear-gradient(90deg,var(--good),#22d3ee)}
+.cartao[data-s="acabando"]::before{background:linear-gradient(90deg,var(--warn),#fde68a)}
+.cartao[data-s="comprar"]::before{background:linear-gradient(90deg,var(--bad),var(--warn))}
+.cartao-abrir{width:100%;background:none;border:0;padding:0;font:inherit;color:inherit;text-align:left;justify-content:space-between}
+.cartao-abrir:hover .cartao-nome b,.cartao-abrir:focus-visible .cartao-nome b{color:var(--accent)}
+.cartao-seta{font-size:1.5rem;line-height:1;color:var(--muted);transition:transform .15s,color .15s}
+.cartao-abrir:hover .cartao-seta{color:var(--accent);transform:translateX(3px)}
+.cartao .row .tag{white-space:nowrap}
