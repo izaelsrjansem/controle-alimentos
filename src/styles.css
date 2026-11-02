@@ -353,3 +353,11 @@ code{font-family:var(--font-mono);font-size:.85em;color:var(--accent)}
   .conferencia{grid-template-columns:1fr}
   .resumo-fixo{bottom:calc(var(--nav-h) + 12px + env(safe-area-inset-bottom,0px))}
 }
+.resumo-fixo .btn{white-space:nowrap;flex:0 0 auto}
+.resumo-numeros .lbl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:720px){
+  .resumo-fixo{padding:8px 10px 8px 14px;border-radius:14px}
+  .resumo-numeros .money{font-size:1.15rem}
+  .resumo-numeros .lbl{font-size:.58rem}
+  .resumo-fixo .btn{padding:10px 14px}
+}
