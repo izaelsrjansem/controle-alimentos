@@ -65,6 +65,9 @@ nav.tabs button[aria-selected="true"]{color:var(--accent);background:var(--accen
   nav.tabs button[aria-selected="true"]{box-shadow:none;background:transparent;border-color:transparent}
   nav.tabs button[aria-selected="true"] svg{filter:drop-shadow(0 0 6px rgba(34,211,238,.8))}
   .status{font-size:.72rem}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .kpi.main{grid-column:1/-1}
+  .kpi .money{font-size:1.15rem}
   main .wrap{padding-bottom:calc(var(--nav-h) + 32px + env(safe-area-inset-bottom,0px))!important}
   .top .wrap{padding-bottom:10px}
 }
@@ -178,7 +181,8 @@ dialog .bd{padding:0 18px 18px;display:flex;flex-direction:column;gap:12px}
 .mesnav{display:flex;align-items:center;gap:8px}
 .mesnav button{border:1px solid var(--line-strong);background:var(--raise);color:var(--fg);border-radius:10px;padding:6px 12px;cursor:pointer;font:inherit}
 .mesnav button:hover{border-color:var(--accent);color:var(--accent)}
-.mesnav strong{font-family:var(--font-head);text-transform:capitalize;min-width:160px;text-align:center;letter-spacing:.02em}
+.mesnav strong{font-family:var(--font-head);display:inline-block;min-width:160px;text-align:center;letter-spacing:.02em}
+.mesnav strong::first-letter{text-transform:uppercase}
 .revisao td input,.revisao td select{padding:6px 7px;font-size:.84rem;border-radius:8px}
 .revisao tr.duvida td,table tr.duvida td{background:var(--warn-soft)}
 .revisao tr.fora td{opacity:.4}
