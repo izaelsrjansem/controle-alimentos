@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../supabase.js";
 import { lerPreferencia, salvarPreferencia } from "../tema.js";
 import { CampoSenha } from "./Login.jsx";
+import { lerBloqueio, salvarBloqueio, biometriaDisponivel, cadastrarBiometria } from "../bloqueio.jsx";
 
 const quando = (iso) => iso ? new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" }) : "nunca";
 const registrar = (acao, descricao) => supabase.rpc("registrar", { p_acao: acao, p_descricao: descricao ?? null }).then(() => {}, () => {});
@@ -10,9 +11,84 @@ export default function Ajustes({ membro, email }) {
   return (
     <>
       <MinhaConta membro={membro} email={email} />
+      <Seguranca email={email} />
       <Aparencia />
       {membro?.papel === "admin" && <Administracao />}
     </>
+  );
+}
+
+/* ---------- Segurança deste aparelho: bloqueio por inatividade e Face ID ---------- */
+const TEMPOS = [[0, "Desligado"], [30, "30 s"], [60, "1 min"], [90, "1 min 30"], [120, "2 min"], [300, "5 min"], [600, "10 min"],
+  [900, "15 min"], [1800, "30 min"], [3600, "1 hora"], [7200, "2 horas"]];
+const formatarTempo = (s) => s >= 3600 ? `${+(s / 3600).toFixed(2)} h` : s >= 60 ? `${+(s / 60).toFixed(2)} min` : `${s} s`;
+
+function Seguranca({ email }) {
+  const [cfg, setCfg] = useState(lerBloqueio);
+  const [temBio, setTemBio] = useState(null);
+  const [pers, setPers] = useState({ valor: "", unidade: "60" });
+  const [msg, setMsg] = useState(null);
+  useEffect(() => { biometriaDisponivel().then(setTemBio); }, []);
+
+  const mudar = (novo) => { const c = { ...cfg, ...novo }; setCfg(c); salvarBloqueio(c); };
+  const personalizado = cfg.segundos > 0 && !TEMPOS.some(([s]) => s === cfg.segundos);
+
+  function aplicarPersonalizado(e) {
+    e.preventDefault();
+    const s = Math.round(Number(String(pers.valor).replace(",", ".")) * Number(pers.unidade));
+    if (!s || s < 30) return setMsg({ tipo: "erro", texto: "O tempo mínimo é 30 segundos." });
+    if (s > 24 * 3600) return setMsg({ tipo: "erro", texto: "O tempo máximo é 24 horas." });
+    mudar({ segundos: s }); setMsg({ tipo: "ok", texto: `Bloqueio depois de ${formatarTempo(s)} sem uso.` });
+  }
+
+  async function ativarBio() {
+    setMsg(null);
+    try {
+      const credencial = await cadastrarBiometria(email);
+      mudar({ credencial, acao: "bloquear", segundos: cfg.segundos || 60 });
+      registrar("ativou Face ID / digital neste aparelho");
+      setMsg({ tipo: "ok", texto: "Face ID / digital ativado neste aparelho." });
+    } catch (e) {
+      setMsg({ tipo: "erro", texto: e?.name === "NotAllowedError" ? "Cadastro cancelado." : "Este navegador não deixou usar o Face ID: " + (e?.message ?? "erro desconhecido") });
+    }
+  }
+
+  return (
+    <div className="panel">
+      <h2>Segurança deste aparelho</h2>
+      <p className="note">Depois do tempo escolhido sem mexer no app, a tela fecha e pede o Face ID (ou a digital) ou a senha. Também vale quando você sai do app e volta depois.</p>
+
+      <div className="lbl">Fechar a tela depois de</div>
+      <div className="opcoes tempos" role="group" aria-label="Tempo sem uso">
+        {TEMPOS.map(([s, t]) => <button key={s} type="button" aria-pressed={cfg.segundos === s} onClick={() => { mudar({ segundos: s }); setMsg(null); }}><b>{t}</b></button>)}
+        <button type="button" aria-pressed={personalizado} onClick={() => document.getElementById("tempo-pers")?.focus()}><b>{personalizado ? formatarTempo(cfg.segundos) : "Personalizado"}</b></button>
+      </div>
+      <form className="row" onSubmit={aplicarPersonalizado} noValidate>
+        <input id="tempo-pers" type="number" inputMode="decimal" min="0" step="any" placeholder="Ex.: 45" value={pers.valor} onChange={(e) => setPers({ ...pers, valor: e.target.value })} style={{ width: 110 }} aria-label="Tempo personalizado" />
+        <select value={pers.unidade} onChange={(e) => setPers({ ...pers, unidade: e.target.value })} style={{ width: "auto" }} aria-label="Unidade">
+          <option value="1">segundos</option><option value="60">minutos</option><option value="3600">horas</option></select>
+        <button className="btn ghost" type="submit">Usar este tempo</button>
+      </form>
+
+      <div className="lbl">Quando o tempo acabar</div>
+      <div className="opcoes" role="group" aria-label="O que fazer">
+        <button type="button" aria-pressed={cfg.acao === "bloquear"} onClick={() => mudar({ acao: "bloquear" })}><b>Bloquear a tela</b><small>Libera com Face ID, digital ou senha</small></button>
+        <button type="button" aria-pressed={cfg.acao === "sair"} onClick={() => mudar({ acao: "sair" })}><b>Sair da conta</b><small>Faz logout; para voltar, e-mail e senha</small></button>
+      </div>
+
+      <div className="lbl">Face ID / digital</div>
+      {temBio === false ? <p className="note">Este aparelho ou navegador não oferece Face ID nem digital para sites. O desbloqueio será pela senha.</p>
+        : cfg.credencial ? (
+          <div className="row"><span className="tag good">ativado neste aparelho</span>
+            <button className="btn ghost" type="button" onClick={ativarBio}>Cadastrar de novo</button>
+            <button className="sair" type="button" onClick={() => { mudar({ credencial: null }); registrar("desativou Face ID / digital neste aparelho"); }}>Desativar</button></div>
+        ) : (
+          <div className="row"><button className="btn" type="button" onClick={ativarBio} disabled={temBio === null}>Ativar Face ID / digital</button>
+            <span className="note">O celular pede o rosto ou a digital para confirmar.</span></div>
+        )}
+      {msg && <div className={msg.tipo} role="alert">{msg.texto}</div>}
+      <p className="note">Estas escolhas valem só para este aparelho. Cada pessoa configura o seu.</p>
+    </div>
   );
 }
 

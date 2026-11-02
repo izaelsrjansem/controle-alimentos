@@ -9,6 +9,7 @@ import Comparar from "./telas/Comparar.jsx";
 import Lancar from "./telas/Lancar.jsx";
 import Ajustes from "./telas/Ajustes.jsx";
 import InstalarApp from "./instalar.jsx";
+import Bloqueio, { limparBloqueio } from "./bloqueio.jsx";
 import { ICONES, Logo } from "./icones.jsx";
 
 // [chave, rótulo, rótulo curto da barra inferior do celular]
@@ -34,6 +35,7 @@ export default function App() {
     const { data } = supabase.auth.onAuthStateChange((evento, s) => {
       setSessao(s);
       if (evento === "PASSWORD_RECOVERY") setTrocandoSenha(true);
+      if (evento === "SIGNED_OUT") limparBloqueio();
       // o Supabase repete SIGNED_IN ao renovar a sessão: registra uma vez por abertura
       if (evento === "SIGNED_IN" && !entrouRegistrado) { entrouRegistrado = true; registrar("entrou no app"); }
     });
@@ -68,6 +70,7 @@ function Painel({ email, userId }) {
 
   return (
     <>
+      <Bloqueio email={email} />
       <header className="top">
         <div className="wrap">
           <div className="brand">
