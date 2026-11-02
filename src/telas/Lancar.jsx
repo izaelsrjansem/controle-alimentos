@@ -1,19 +1,20 @@
 import { useMemo, useState } from "react";
 import { supabase } from "../supabase.js";
-import { brl, hoje, prepararFoto, CATEGORIAS, TIPO_DA_CATEGORIA } from "../util.js";
+import { brl, dataBR, hoje, prepararFoto, mesmaCompra, CATEGORIAS, TIPO_DA_CATEGORIA } from "../util.js";
 
 const r2 = (v) => Math.round((Number(v) || 0) * 100) / 100;
 const linhaVazia = () => ({ chave: crypto.randomUUID(), nome: "", marca: "", categoria: "Mercearia", tipo: "alimento", embalagem: "",
   tamanho: 1, medida: "un", quantidade: 1, valor_unitario: "", desconto: 0, valor_total: 0, duvida: false, descricao_cupom: "" });
 
 export default function Lancar({ dados, aoSalvar }) {
-  const [modo, setModo] = useState("foto");
+  const [modo, setModo] = useState("colar");
   return (
     <>
       <div className="row" role="tablist" aria-label="Como lançar">
-        {[["foto", "Foto do cupom"], ["manual", "Digitar a compra"], ["preco", "Anotar preço visto"]].map(([k, r]) => (
+        {[["colar", "Colar leitura do Claude"], ["foto", "Foto do cupom"], ["manual", "Digitar a compra"], ["preco", "Anotar preço visto"]].map(([k, r]) => (
           <button key={k} className={"btn" + (modo === k ? "" : " ghost")} onClick={() => setModo(k)} aria-pressed={modo === k}>{r}</button>))}
       </div>
+      {modo === "colar" && <Colar dados={dados} aoSalvar={aoSalvar} />}
       {modo === "foto" && <PorFoto dados={dados} aoSalvar={aoSalvar} />}
       {modo === "manual" && <Revisao dados={dados} inicial={{ mercado: "", data: hoje(), pagamento: "", itens: [linhaVazia(), linhaVazia(), linhaVazia()] }} origem="manual" aoSalvar={aoSalvar} />}
       {modo === "preco" && <AnotarPreco dados={dados} />}
@@ -58,19 +59,11 @@ function PorFoto({ dados, aoSalvar }) {
   }
 
   if (etapa === "conferir" && leitura) {
-    const c = leitura.conferencia;
     return (
       <>
-        <div className={c.bate_total && c.bate_desconto ? "ok" : "banner"}>
-          {c.bate_total && c.bate_desconto
-            ? `A soma dos ${leitura.itens.length} itens bate com o cupom: ${brl(leitura.total_bruto)} − ${brl(leitura.desconto_total)} de desconto = ${brl(leitura.total_pago)}.`
-            : `Atenção: a soma dos itens lidos (${brl(c.soma_itens)}) não bate com o total do cupom (${brl(leitura.total_bruto)}). Confira as linhas em amarelo antes de salvar.`}
-          {leitura.observacoes && <div style={{ marginTop: 6 }}>{leitura.observacoes}</div>}
-        </div>
+        <AvisoConferencia leitura={leitura} />
         {previas.length > 0 && <div className="fotos">{previas.map((u) => <img key={u} src={u} alt="Parte do cupom enviada" />)}</div>}
-        <Revisao dados={dados} origem="foto" fotos={leitura.caminhos} aoSalvar={aoSalvar}
-          inicial={{ mercado: leitura.mercado, data: leitura.data || hoje(), pagamento: leitura.pagamento,
-            itens: leitura.itens.map((i) => ({ ...linhaVazia(), ...i })) }} />
+        <Revisao dados={dados} origem="foto" fotos={leitura.caminhos} aoSalvar={aoSalvar} inicial={inicialDaLeitura(leitura)} />
       </>
     );
   }
@@ -96,12 +89,97 @@ function PorFoto({ dados, aoSalvar }) {
   );
 }
 
+function AvisoConferencia({ leitura }) {
+  const c = leitura.conferencia;
+  return (
+    <div className={c.bate_total && c.bate_desconto ? "ok" : "banner"}>
+      {c.bate_total && c.bate_desconto
+        ? `A soma dos ${leitura.itens.length} itens bate com o cupom: ${brl(leitura.total_bruto)} − ${brl(leitura.desconto_total)} de desconto = ${brl(leitura.total_pago)}.`
+        : `Atenção: a soma dos itens lidos (${brl(c.soma_itens)}) não bate com o total do cupom (${brl(leitura.total_bruto)}). Confira as linhas em amarelo antes de salvar.`}
+      {leitura.observacoes && <div style={{ marginTop: 6 }}>{leitura.observacoes}</div>}
+    </div>
+  );
+}
+
+const inicialDaLeitura = (l) => ({ mercado: l.mercado, data: l.data || hoje(), pagamento: l.pagamento,
+  itens: l.itens.map((i) => ({ ...linhaVazia(), ...i })) });
+
+/* ---------- Texto colado do Claude (mesmo formato da função ler-cupom) -> conferência ---------- */
+// Aceita 7.99, "7,99" ou "R$ 1.069,36"
+function numero(v) {
+  if (typeof v === "number") return v;
+  let t = String(v ?? "").replace(/[^\d,.-]/g, "");
+  if (t.includes(",")) t = t.replace(/\./g, "").replace(",", ".");
+  return Number(t) || 0;
+}
+
+export function interpretarLeitura(texto) {
+  const ini = texto.indexOf("{"), fim = texto.lastIndexOf("}");
+  if (ini < 0 || fim < ini) throw new Error("Não encontrei a leitura no texto colado. Copie a resposta inteira do Claude.");
+  let c;
+  try { c = JSON.parse(texto.slice(ini, fim + 1)); } catch { throw new Error("O texto colado está incompleto ou foi alterado. Copie de novo a resposta do Claude."); }
+  if (!Array.isArray(c.itens) || !c.itens.length) throw new Error("A leitura colada não tem itens.");
+
+  const itens = c.itens.map((i) => {
+    const categoria = CATEGORIAS.includes(i.categoria) ? i.categoria : "Outros";
+    const quantidade = numero(i.quantidade) || 1, valor_unitario = numero(i.valor_unitario), desconto = numero(i.desconto);
+    return { nome: String(i.nome ?? "").trim(), marca: i.marca ?? "", categoria,
+      tipo: ["alimento", "limpeza", "higiene", "utilidade"].includes(i.tipo) ? i.tipo : (TIPO_DA_CATEGORIA[categoria] ?? "alimento"),
+      embalagem: i.embalagem ?? "", tamanho: numero(i.tamanho) || 1, medida: ["kg", "L", "un"].includes(i.medida) ? i.medida : "un",
+      quantidade, valor_unitario, desconto,
+      valor_total: i.valor_total == null || i.valor_total === "" ? r2(quantidade * valor_unitario - desconto) : numero(i.valor_total),
+      duvida: !!i.duvida, descricao_cupom: i.descricao_cupom ?? "" };
+  });
+  const soma = itens.reduce((s, i) => s + i.valor_total + i.desconto, 0);
+  const descontos = itens.reduce((s, i) => s + i.desconto, 0);
+  const total_bruto = numero(c.total_bruto) || r2(soma), desconto_total = numero(c.desconto_total);
+  return { mercado: c.mercado ?? "", data: /^\d{4}-\d{2}-\d{2}$/.test(c.data ?? "") ? c.data : "", pagamento: c.pagamento ?? "",
+    total_bruto, desconto_total, total_pago: numero(c.total_pago) || r2(total_bruto - desconto_total), observacoes: c.observacoes ?? "", itens,
+    conferencia: { soma_itens: r2(soma), soma_descontos: r2(descontos),
+      bate_total: Math.abs(soma - total_bruto) < 0.02, bate_desconto: Math.abs(descontos - desconto_total) < 0.02 } };
+}
+
+function Colar({ dados, aoSalvar }) {
+  const [texto, setTexto] = useState("");
+  const [erro, setErro] = useState(null);
+  const [leitura, setLeitura] = useState(null);
+
+  if (leitura) {
+    return (
+      <>
+        <AvisoConferencia leitura={leitura} />
+        <Revisao dados={dados} origem="foto" aoSalvar={aoSalvar} inicial={inicialDaLeitura(leitura)} />
+        <button className="btn ghost" type="button" onClick={() => setLeitura(null)}>Colar outro texto</button>
+      </>
+    );
+  }
+
+  function conferir() {
+    try { setErro(null); setLeitura(interpretarLeitura(texto)); } catch (e) { setErro(e.message); }
+  }
+
+  return (
+    <div className="panel">
+      <h2>Colar leitura do Claude</h2>
+      <p style={{ marginTop: 0 }}>Mande a foto do cupom no seu Projeto "Cupons de mercado" no Claude, toque em <b>copiar</b> na resposta e cole aqui.</p>
+      <textarea id="colar-texto" rows={10} style={{ width: "100%", fontFamily: "monospace" }} value={texto}
+        onChange={(e) => setTexto(e.target.value)} placeholder='{"mercado": "Atacadão", "data": "2026-11-02", ...}' />
+      <div className="row">
+        <button className="btn" type="button" onClick={conferir} disabled={!texto.trim()}>Conferir itens</button>
+      </div>
+      {erro && <div className="erro">{erro}</div>}
+      <p className="note">Nada é salvo antes de você conferir.</p>
+    </div>
+  );
+}
+
 /* ---------- Tabela editável, usada pela foto e pela digitação ---------- */
 function Revisao({ dados, inicial, origem, fotos = [], aoSalvar }) {
   const [cab, setCab] = useState({ mercado: inicial.mercado, data: inicial.data, pagamento: inicial.pagamento });
   const [itens, setItens] = useState(inicial.itens);
   const [msg, setMsg] = useState(null);
   const [salvando, setSalvando] = useState(false);
+  const [repetida, setRepetida] = useState(null);
 
   const porNome = useMemo(() => new Map(dados.itens.map((g) => [g.nome.toLowerCase(), g])), [dados.itens]);
   const mercados = [...new Set(dados.precos.map((r) => r.mercado))];
@@ -129,10 +207,12 @@ function Revisao({ dados, inicial, origem, fotos = [], aoSalvar }) {
   const total = validos.reduce((s, l) => s + Number(l.valor_total), 0);
   const descontos = validos.reduce((s, l) => s + Number(l.desconto || 0), 0);
 
-  async function salvar() {
+  async function salvar(mesmoRepetida = false) {
     if (!cab.mercado.trim() || !cab.data) return setMsg("Informe o mercado e a data da compra.");
     if (!validos.length) return setMsg("Inclua pelo menos um item com nome, quantidade e preço.");
-    setSalvando(true); setMsg(null);
+    const igual = dados.compras.find((c) => mesmaCompra(c, { data: cab.data, mercado: cab.mercado, total_pago: total }));
+    if (igual && !mesmoRepetida) return setRepetida(igual);
+    setSalvando(true); setMsg(null); setRepetida(null);
     const { error } = await supabase.rpc("salvar_compra", { p: {
       mercado: cab.mercado.trim(), data: cab.data, pagamento: cab.pagamento || null, origem, foto_paths: fotos,
       itens: validos.map((l) => ({ nome: l.nome.trim(), categoria: l.categoria, tipo: l.tipo, medida: l.medida,
@@ -180,9 +260,16 @@ function Revisao({ dados, inicial, origem, fotos = [], aoSalvar }) {
         <button className="btn ghost" type="button" onClick={() => setItens([...itens, linhaVazia()])}>+ Adicionar item</button>
         <div className="row">
           <span className="note">{validos.length} itens · desconto {brl(descontos)} · total <b className="money">{brl(total)}</b></span>
-          <button className="btn" onClick={salvar} disabled={salvando}>{salvando ? "Salvando…" : "Salvar compra"}</button>
+          <button className="btn" onClick={() => salvar()} disabled={salvando}>{salvando ? "Salvando…" : "Salvar compra"}</button>
         </div>
       </div>
+      {repetida && <div className="banner">
+        Esta compra já foi lançada: {repetida.mercado}, {dataBR(repetida.data)}, {brl(repetida.total_pago)}. Salvar de novo vai contar tudo em dobro.
+        <div className="row" style={{ marginTop: 8 }}>
+          <button className="btn ghost" type="button" onClick={() => setRepetida(null)}>Não salvar</button>
+          <button className="btn" type="button" onClick={() => salvar(true)} disabled={salvando}>É outra compra, salvar mesmo assim</button>
+        </div>
+      </div>}
       {msg && <div className="erro">{msg}</div>}
     </div>
   );

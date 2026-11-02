@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { supabase } from "../supabase.js";
-import { brl, num, dataBR, mesAtual, nomeMes, NAO_ALIMENTO, medidaTxt, baixarCSV } from "../util.js";
+import { brl, num, dataBR, mesAtual, nomeMes, NAO_ALIMENTO, medidaTxt, baixarCSV, ORIGEM_TXT, mesmaCompra } from "../util.js";
 import cupomInicial from "../importacao/cupom-2026-10-31.json";
 
 const somarMes = (aaaamm, delta) => {
@@ -14,6 +14,7 @@ export default function Resumo({ dados, ir }) {
   const [mes, setMes] = useState(() => compras[0]?.data.slice(0, 7) ?? mesAtual());
   const [aviso, setAviso] = useState(null);
   const [apagando, setApagando] = useState(null);
+  const [importando, setImportando] = useState(false);
 
   const prod = useMemo(() => new Map(produtos.map((p) => [p.id, p])), [produtos]);
   const doMes = compras.filter((c) => c.data.startsWith(mes));
@@ -39,10 +40,16 @@ export default function Resumo({ dados, ir }) {
   const maisComprados = [...porItem].sort((a, b) => b.vezes.size - a.vezes.size || b.gasto - a.gasto).slice(0, 8);
 
   // comparação com o mês anterior
+  const itensDaCompra = useMemo(() => precos.reduce((m, r) => r.compra_id ? m.set(r.compra_id, (m.get(r.compra_id) ?? 0) + 1) : m, new Map()), [precos]);
+  // a mais recente de cada par igual é marcada como repetida (a lista vem da mais nova para a mais antiga)
+  const repetidas = new Set(doMes.filter((c, i) => doMes.slice(i + 1).some((o) => mesmaCompra(c, o))).map((c) => c.id));
+
   const anterior = somarMes(mes, -1);
   const totalAnterior = compras.filter((c) => c.data.startsWith(anterior)).reduce((s, c) => s + c.total_pago, 0);
 
   async function importar() {
+    if (importando) return;
+    setImportando(true);
     setAviso({ tipo: "ok", texto: "Importando o cupom de 31/10/2026…" });
     const c = cupomInicial;
     const { error } = await supabase.rpc("salvar_compra", { p: {
@@ -52,9 +59,9 @@ export default function Resumo({ dados, ir }) {
         descricao_cupom: `Cód. ${i.codigo}`, marca: i.marca === "—" ? "" : i.marca, embalagem: i.emb,
         tamanho: i.tam, quantidade: i.qtd, valor_unitario: i.vu, desconto: i.desconto, valor_total: i.total })),
     } });
-    if (error) return setAviso({ tipo: "erro", texto: "Não consegui importar: " + error.message });
+    if (error) { setImportando(false); return setAviso({ tipo: "erro", texto: "Não consegui importar: " + error.message }); }
     setAviso({ tipo: "ok", texto: "Cupom de 31/10/2026 importado: 83 itens, R$ 1.069,36." });
-    setMes("2026-10"); dados.recarregar();
+    setMes("2026-10"); await dados.recarregar(); setImportando(false);
   }
 
   async function apagar(c) {
@@ -81,7 +88,7 @@ export default function Resumo({ dados, ir }) {
         <p>Comece pelo cupom do Atacadão de 31/10/2026, que já está lido (83 itens, R$ 1.069,36), ou lance uma compra nova.</p>
         {aviso && <div className={aviso.tipo}>{aviso.texto}</div>}
         <div className="row">
-          <button className="btn" onClick={importar}>Importar cupom de 31/10/2026</button>
+          <button className="btn" onClick={importar} disabled={importando}>{importando ? "Importando…" : "Importar cupom de 31/10/2026"}</button>
           <button className="btn ghost" onClick={() => ir("lancar")}>Lançar outra compra</button>
         </div>
       </div>
@@ -103,6 +110,10 @@ export default function Resumo({ dados, ir }) {
         </div>
       </div>
       {aviso && <div className={aviso.tipo}>{aviso.texto}</div>}
+      {repetidas.size > 0 && <div className="banner">
+        {repetidas.size === 1 ? "Uma compra parece ter sido lançada duas vezes" : `${repetidas.size} compras parecem ter sido lançadas duas vezes`} (mesma data, mercado e total).
+        Os totais abaixo estão contando em dobro. <a href="#compras-do-mes">Ver e apagar a repetida</a>.
+      </div>}
 
       <div className="kpis">
         <div className="kpi main"><span className="lbl">Gasto no mês</span><span className="money">{brl(total)}</span>
@@ -144,14 +155,18 @@ export default function Resumo({ dados, ir }) {
         </>
       )}
 
-      <div className="panel">
+      <div className="panel" id="compras-do-mes">
         <h2>Compras de {nomeMes(mes)}</h2>
+        <p className="note">Cada linha é um lançamento inteiro. "Apagar" remove a compra com todos os itens dela.</p>
         <div className="tablewrap"><table>
-          <thead><tr><th>Data</th><th>Mercado</th><th className="r">Desconto</th><th className="r">Pago</th><th /></tr></thead>
+          <thead><tr><th>Data</th><th>Mercado</th><th className="r">Itens</th><th className="r">Desconto</th><th className="r">Pago</th><th /></tr></thead>
           <tbody>{doMes.map((c) => (
-            <tr key={c.id}>
+            <tr key={c.id} className={repetidas.has(c.id) ? "duvida" : ""}>
               <td className="num">{dataBR(c.data)}</td>
-              <td>{c.mercado}{c.observacao && <div className="note">{c.observacao}</div>}</td>
+              <td>{c.mercado}
+                {repetidas.has(c.id) && <div><b>Repetida</b>: igual a outra compra desta lista</div>}
+                <div className="note">{[ORIGEM_TXT[c.origem], c.observacao].filter(Boolean).join(" · ")}</div></td>
+              <td className="r num">{itensDaCompra.get(c.id) ?? 0}</td>
               <td className="r money">{brl(c.desconto)}</td>
               <td className="r money"><b>{brl(c.total_pago)}</b></td>
               <td className="r">{apagando === c.id

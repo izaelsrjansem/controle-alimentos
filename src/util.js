@@ -16,6 +16,11 @@ export const CATEGORIAS = [
   "Doces e biscoitos", "Temperos e molhos", "Bebidas", "Limpeza", "Higiene", "Utilidades", "Outros",
 ];
 export const TIPO_DA_CATEGORIA = { Limpeza: "limpeza", Higiene: "higiene", Utilidades: "utilidade" };
+export const ORIGEM_TXT = { importacao: "Importada", foto: "Leitura do cupom", manual: "Digitada" };
+
+// Mesma data, mesmo mercado e mesmo total pago: quase certamente o mesmo cupom lançado duas vezes
+export const mesmaCompra = (a, b) => a.data === b.data && Math.abs(a.total_pago - b.total_pago) < 0.02
+  && a.mercado.trim().toLowerCase() === b.mercado.trim().toLowerCase();
 
 /* ---------- CSV que o Excel brasileiro abre direto (; e vírgula decimal) ---------- */
 export function baixarCSV(nomeArquivo, cabecalho, linhas) {
