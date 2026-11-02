@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "../supabase.js";
 import { brl, num, dataBR, mesAtual, nomeMes, NAO_ALIMENTO, medidaTxt, baixarCSV, ORIGEM_TXT, mesmaCompra } from "../util.js";
 import cupomInicial from "../importacao/cupom-2026-10-31.json";
@@ -16,6 +16,9 @@ export default function Resumo({ dados, ir }) {
   const [apagando, setApagando] = useState(null);
   const [importando, setImportando] = useState(false);
   const [aberta, setAberta] = useState(null);
+  const { recarregar } = dados;
+  const aoMudarItens = useCallback((texto) => { setAviso({ tipo: "ok", texto }); recarregar(); }, [recarregar]);
+  const aoErroItens = useCallback((texto) => setAviso({ tipo: "erro", texto }), []);
 
   const prod = useMemo(() => new Map(produtos.map((p) => [p.id, p])), [produtos]);
   const doMes = compras.filter((c) => c.data.startsWith(mes));
@@ -177,8 +180,7 @@ export default function Resumo({ dados, ir }) {
                     <button className="sair" onClick={() => setApagando(c.id)}>Apagar compra</button></span>}</td>
             </tr>,
             aberta === c.id && <tr key={c.id + "-itens"}><td colSpan={6}>
-              <ItensDaCompra compra={c} linhas={precos.filter((r) => r.compra_id === c.id)} prod={prod}
-                aoMudar={(texto) => { setAviso({ tipo: "ok", texto }); dados.recarregar(); }} aoErro={(texto) => setAviso({ tipo: "erro", texto })} />
+              <ItensDaCompra compra={c} prod={prod} aoMudar={aoMudarItens} aoErro={aoErroItens} />
             </td></tr>,
           ])}</tbody>
         </table></div>
@@ -187,42 +189,67 @@ export default function Resumo({ dados, ir }) {
   );
 }
 
-/* ---------- Compra já lançada: excluir um item e recalcular o total ---------- */
-function ItensDaCompra({ compra, linhas, prod, aoMudar, aoErro }) {
+/* ---------- Compra já lançada: marcar item como fora do rancho ou excluir, recalculando o total ---------- */
+function ItensDaCompra({ compra, prod, aoMudar, aoErro }) {
+  const [linhas, setLinhas] = useState(null);
   const [excluindo, setExcluindo] = useState(null);
   const [ocupado, setOcupado] = useState(false);
+
+  // lê compra_itens direto: a visão de preços não mostra os itens fora do rancho
+  const ler = useCallback(async () => {
+    const { data, error } = await supabase.from("compra_itens")
+      .select("id,produto_id,marca,embalagem,quantidade,valor_unitario,desconto,valor_total,fora_rancho")
+      .eq("compra_id", compra.id).order("fora_rancho").order("valor_total", { ascending: false });
+    if (error) return aoErro("Não consegui ler os itens: " + error.message);
+    setLinhas(data.map((l) => ({ ...l, quantidade: Number(l.quantidade), valor_unitario: Number(l.valor_unitario),
+      desconto: Number(l.desconto), valor_total: Number(l.valor_total) })));
+  }, [compra.id, aoErro]);
+  useEffect(() => { ler(); }, [ler]);
+
+  async function concluir(texto) {
+    const { error } = await supabase.rpc("recalcular_compra", { p_compra: compra.id });
+    setOcupado(false); setExcluindo(null);
+    if (error) return aoErro("A mudança foi feita, mas não consegui atualizar o total da compra: " + error.message);
+    await ler(); aoMudar(texto);
+  }
+
+  async function alternarFora(item) {
+    setOcupado(true);
+    const nome = prod.get(item.produto_id)?.nome ?? "Item";
+    const { error } = await supabase.from("compra_itens").update({ fora_rancho: !item.fora_rancho }).eq("id", item.id);
+    if (error) { setOcupado(false); return aoErro("Não consegui mudar o item: " + error.message); }
+    concluir(item.fora_rancho ? `${nome} voltou a contar na compra de ${dataBR(compra.data)}.`
+      : `${nome} marcado como fora do rancho: continua na compra de ${dataBR(compra.data)}, mas não conta no total.`);
+  }
 
   async function excluir(item) {
     setOcupado(true);
     const nome = prod.get(item.produto_id)?.nome ?? "Item";
     const { error } = await supabase.from("compra_itens").delete().eq("id", item.id);
     if (error) { setOcupado(false); setExcluindo(null); return aoErro("Não consegui excluir o item: " + error.message); }
-
-    const resto = linhas.filter((l) => l.id !== item.id);
-    if (!resto.length) {
+    if (linhas.length === 1) {
       // era o último item: a compra inteira deixa de existir
       const { error: e2 } = await supabase.from("compras").delete().eq("id", compra.id);
       setOcupado(false); setExcluindo(null);
       if (e2) return aoErro("O item saiu, mas não consegui apagar a compra vazia: " + e2.message);
       return aoMudar(`${nome} excluído. Era o último item, então a compra de ${dataBR(compra.data)} foi apagada.`);
     }
-    const bruto = resto.reduce((s, l) => s + l.valor_total + l.desconto, 0);
-    const desc = resto.reduce((s, l) => s + l.desconto, 0);
-    const r2 = (v) => Math.round(v * 100) / 100;
-    const { error: e3 } = await supabase.from("compras")
-      .update({ total_bruto: r2(bruto), desconto: r2(desc), total_pago: r2(bruto - desc) }).eq("id", compra.id);
-    setOcupado(false); setExcluindo(null);
-    if (e3) return aoErro("O item saiu, mas não consegui atualizar o total da compra: " + e3.message);
-    aoMudar(`${nome} excluído da compra de ${dataBR(compra.data)}. Novo total: ${brl(bruto - desc)}.`);
+    concluir(`${nome} excluído da compra de ${dataBR(compra.data)}.`);
   }
 
+  if (!linhas) return <p className="carregando">Carregando os itens…</p>;
   if (!linhas.length) return <p className="empty">Esta compra não tem itens.</p>;
+  const fora = linhas.filter((l) => l.fora_rancho);
   return (
+    <>
+    {fora.length > 0 && <p className="note">{fora.length} {fora.length === 1 ? "item fora" : "itens fora"} do rancho ({brl(fora.reduce((s, l) => s + l.valor_total, 0))}): guardados na compra, sem contar no total.</p>}
     <div className="tablewrap"><table className="revisao">
-      <thead><tr><th>Item</th><th>Marca</th><th>Embalagem</th><th className="r">Qtd</th><th className="r">R$ unit.</th><th className="r">Desc.</th><th className="r">Total</th><th /></tr></thead>
+      <thead><tr><th /><th>Item</th><th>Marca</th><th>Embalagem</th><th className="r">Qtd</th><th className="r">R$ unit.</th><th className="r">Desc.</th><th className="r">Total</th><th /></tr></thead>
       <tbody>{linhas.map((l) => (
-        <tr key={l.id}>
-          <td>{prod.get(l.produto_id)?.nome}</td>
+        <tr key={l.id} className={l.fora_rancho ? "fora" : ""}>
+          <td className="acao"><button className="btn ghost" style={{ whiteSpace: "nowrap" }} onClick={() => alternarFora(l)} disabled={ocupado}>
+            {l.fora_rancho ? "Contar de novo" : "Fora do rancho"}</button></td>
+          <td>{prod.get(l.produto_id)?.nome}{l.fora_rancho && <div className="note">fora do rancho</div>}</td>
           <td>{l.marca ?? ""}</td>
           <td>{l.embalagem ?? ""}</td>
           <td className="r num">{num(l.quantidade)}</td>
@@ -236,5 +263,6 @@ function ItensDaCompra({ compra, linhas, prod, aoMudar, aoErro }) {
             : <button className="sair" onClick={() => setExcluindo(l.id)} disabled={ocupado}>Excluir</button>}</td>
         </tr>))}</tbody>
     </table></div>
+    </>
   );
 }

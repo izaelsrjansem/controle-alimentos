@@ -203,9 +203,10 @@ function Revisao({ dados, inicial, origem, fotos = [], aoSalvar }) {
     return n;
   }));
 
-  // Na leitura do cupom, item que não é do rancho (lençol, liquidificador...) fica marcado como "fora" e não é salvo
+  // Na leitura do cupom, item que não é do rancho (lençol, liquidificador...) é salvo marcado como "fora" e não conta no total
   const lido = origem !== "manual";
-  const validos = itens.filter((l) => !l.fora && l.nome.trim() && Number(l.quantidade) > 0 && l.valor_unitario !== "");
+  const preenchidos = itens.filter((l) => l.nome.trim() && Number(l.quantidade) > 0 && l.valor_unitario !== "");
+  const validos = preenchidos.filter((l) => !l.fora);
   const total = validos.reduce((s, l) => s + Number(l.valor_total), 0);
   const descontos = validos.reduce((s, l) => s + Number(l.desconto || 0), 0);
   const fora = itens.filter((l) => l.fora);
@@ -220,8 +221,7 @@ function Revisao({ dados, inicial, origem, fotos = [], aoSalvar }) {
     setSalvando(true); setMsg(null); setRepetida(null);
     const { error } = await supabase.rpc("salvar_compra", { p: {
       mercado: cab.mercado.trim(), data: cab.data, pagamento: cab.pagamento || null, origem, foto_paths: fotos,
-      observacao: fora.length ? `Fora do rancho (${brl(totalFora)}): ${fora.map((l) => l.nome.trim() || l.descricao_cupom).join(", ")}` : null,
-      itens: validos.map((l) => ({ nome: l.nome.trim(), categoria: l.categoria, tipo: l.tipo, medida: l.medida,
+      itens: preenchidos.map((l) => ({ fora_rancho: !!l.fora, nome: l.nome.trim(), categoria: l.categoria, tipo: l.tipo, medida: l.medida,
         descricao_cupom: l.descricao_cupom, marca: l.marca, embalagem: l.embalagem, tamanho: Number(l.tamanho) || 1,
         quantidade: Number(l.quantidade), valor_unitario: Number(l.valor_unitario), desconto: Number(l.desconto) || 0, valor_total: Number(l.valor_total) })),
     } });
@@ -243,7 +243,7 @@ function Revisao({ dados, inicial, origem, fotos = [], aoSalvar }) {
       <datalist id="lista-mercados">{mercados.map((m) => <option key={m} value={m} />)}</datalist>
       <datalist id="lista-itens">{dados.itens.map((g) => <option key={g.id} value={g.nome} />)}</datalist>
 
-      {lido && <p className="note">Item que não é do rancho (lençol, liquidificador, eletrônico...)? Toque em <b>Fora do rancho</b> na linha dele: o item não é lançado e o total é recalculado só com o que fica.</p>}
+      {lido && <p className="note">Item que não é do rancho (lençol, liquidificador, eletrônico...)? Toque em <b>Fora do rancho</b> na linha dele: o item fica guardado na compra, mas não conta no total nem nos relatórios.</p>}
       <div className="tablewrap"><table className="revisao">
         <thead><tr>{lido && <th />}<th>Item</th><th>Marca</th><th>Categoria</th><th>Embalagem</th><th className="r">Tam.</th><th>Medida</th><th className="r">Qtd</th><th className="r">R$ unit.</th><th className="r">Desc.</th><th className="r">Total</th><th /></tr></thead>
         <tbody>{itens.map((l) => (
