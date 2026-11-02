@@ -204,3 +204,21 @@ code{font-family:var(--font-mono);font-size:.85em;color:var(--accent)}
 .passos{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px}
 
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* compras do mês viram cartões no celular */
+@media (max-width:720px){
+  table.compras thead{display:none}
+  table.compras tr:not(.detalhe){display:grid;grid-template-columns:1fr auto;grid-template-areas:"d p" "m m" "i x" "a a";gap:6px 12px;padding:12px 4px;border-bottom:1px solid var(--line)}
+  table.compras tr:not(.detalhe) td{border:0;padding:0;background:none}
+  table.compras td:nth-child(1){grid-area:d;color:var(--accent)}
+  table.compras td:nth-child(2){grid-area:m}
+  table.compras td:nth-child(3){grid-area:i;text-align:left}
+  table.compras td:nth-child(3)::before{content:"Itens ";font-family:var(--font-mono);font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  table.compras td:nth-child(4){grid-area:x}
+  table.compras td:nth-child(4)::before{content:"Desc. ";font-family:var(--font-mono);font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  table.compras td:nth-child(5){grid-area:p;font-size:1.05rem}
+  table.compras td:nth-child(6){grid-area:a}
+  table.compras td:nth-child(6) .row{justify-content:space-between!important}
+  table.compras tr.duvida{background:var(--warn-soft);border-radius:10px;padding-inline:10px}
+  table.compras tr.detalhe td{display:block;padding:0 0 12px;border-bottom:1px solid var(--line)}
+}

@@ -162,7 +162,7 @@ export default function Resumo({ dados, ir }) {
       <div className="panel" id="compras-do-mes">
         <h2>Compras de {nomeMes(mes)}</h2>
         <p className="note">Cada linha é um lançamento inteiro. "Ver itens" abre a compra para excluir um item; "Apagar" remove a compra com todos os itens dela.</p>
-        <div className="tablewrap"><table>
+        <div className="tablewrap"><table className="compras">
           <thead><tr><th>Data</th><th>Mercado</th><th className="r">Itens</th><th className="r">Desconto</th><th className="r">Pago</th><th /></tr></thead>
           <tbody>{doMes.map((c) => [
             <tr key={c.id} className={repetidas.has(c.id) ? "duvida" : ""}>
@@ -179,7 +179,7 @@ export default function Resumo({ dados, ir }) {
                     <button className="btn ghost" onClick={() => setAberta(aberta === c.id ? null : c.id)} aria-expanded={aberta === c.id}>{aberta === c.id ? "Fechar" : "Ver itens"}</button>
                     <button className="sair" onClick={() => setApagando(c.id)}>Apagar compra</button></span>}</td>
             </tr>,
-            aberta === c.id && <tr key={c.id + "-itens"}><td colSpan={6}>
+            aberta === c.id && <tr key={c.id + "-itens"} className="detalhe"><td colSpan={6}>
               <ItensDaCompra compra={c} prod={prod} aoMudar={aoMudarItens} aoErro={aoErroItens} />
             </td></tr>,
           ])}</tbody>
