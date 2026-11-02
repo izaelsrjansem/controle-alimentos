@@ -102,7 +102,8 @@ function AvisoConferencia({ leitura }) {
 }
 
 const inicialDaLeitura = (l) => ({ mercado: l.mercado, data: l.data || hoje(), pagamento: l.pagamento,
-  itens: l.itens.map((i) => ({ ...linhaVazia(), ...i })) });
+  // item que a leitura classificou como "não é rancho" já chega marcado, como se o usuário tivesse tocado em Fora do rancho
+  itens: l.itens.map((i) => ({ ...linhaVazia(), ...i, fora: !!i.fora_rancho, foraAuto: !!i.fora_rancho })) });
 
 /* ---------- Texto colado do Claude (mesmo formato da função ler-cupom) -> conferência ---------- */
 // Aceita 7.99, "7,99" ou "R$ 1.069,36"
@@ -128,7 +129,7 @@ export function interpretarLeitura(texto) {
       embalagem: i.embalagem ?? "", tamanho: numero(i.tamanho) || 1, medida: ["kg", "L", "un"].includes(i.medida) ? i.medida : "un",
       quantidade, valor_unitario, desconto,
       valor_total: i.valor_total == null || i.valor_total === "" ? r2(quantidade * valor_unitario - desconto) : numero(i.valor_total),
-      duvida: !!i.duvida, descricao_cupom: i.descricao_cupom ?? "" };
+      duvida: !!i.duvida, fora_rancho: i.fora_rancho === true || i.fora_rancho === "true", descricao_cupom: i.descricao_cupom ?? "" };
   });
   const soma = itens.reduce((s, i) => s + i.valor_total + i.desconto, 0);
   const descontos = itens.reduce((s, i) => s + i.desconto, 0);
@@ -211,7 +212,8 @@ function Revisao({ dados, inicial, origem, fotos = [], aoSalvar }) {
   const descontos = validos.reduce((s, l) => s + Number(l.desconto || 0), 0);
   const fora = itens.filter((l) => l.fora);
   const totalFora = fora.reduce((s, l) => s + Number(l.valor_total), 0);
-  const alternarFora = (chave) => setItens((ls) => ls.map((l) => l.chave === chave ? { ...l, fora: !l.fora } : l));
+  const alternarFora = (chave) => setItens((ls) => ls.map((l) => l.chave === chave ? { ...l, fora: !l.fora, foraAuto: false } : l));
+  const automaticos = itens.filter((l) => l.fora && l.foraAuto);
 
   async function salvar(mesmoRepetida = false) {
     if (!cab.mercado.trim() || !cab.data) return setMsg("Informe o mercado e a data da compra.");
@@ -244,12 +246,13 @@ function Revisao({ dados, inicial, origem, fotos = [], aoSalvar }) {
       <datalist id="lista-itens">{dados.itens.map((g) => <option key={g.id} value={g.nome} />)}</datalist>
 
       {lido && <p className="note">Confira cada cartão. Item que não é do rancho (lençol, liquidificador, eletrônico...)? Toque em <b>Fora do rancho</b>: ele fica guardado na compra, mas não conta no total nem nos relatórios. Cartões em amarelo têm algum número que a leitura não teve certeza.</p>}
+      {lido && automaticos.length > 0 && <div className="banner">A leitura marcou sozinha {automaticos.length === 1 ? "1 item" : `${automaticos.length} itens`} como <b>fora do rancho</b>: {automaticos.map((l) => l.nome).join(", ")}. Se algum for do rancho, toque em <b>Incluir de novo</b> no cartão dele.</div>}
       <div className="cartoes conferencia">
         {itens.map((l, n) => (
           <article key={l.chave} className={"cartao cartao-edit" + (l.fora ? " fora" : l.duvida ? " duvida" : "")}>
             <div className="cartao-cab">
               <span className="cartao-num">{String(n + 1).padStart(2, "0")}</span>
-              {l.fora && <span className="tag">fora do rancho</span>}
+              {l.fora && <span className="tag">{l.foraAuto ? "fora do rancho · automático" : "fora do rancho"}</span>}
               {!l.fora && l.duvida && <span className="tag aviso">conferir</span>}
               <span style={{ flex: 1 }} />
               {lido

@@ -39,7 +39,7 @@ const ESQUEMA = {
         type: "object",
         additionalProperties: false,
         required: ["descricao_cupom", "nome", "marca", "categoria", "tipo", "embalagem", "tamanho",
-          "medida", "quantidade", "valor_unitario", "desconto", "valor_total", "duvida"],
+          "medida", "quantidade", "valor_unitario", "desconto", "valor_total", "duvida", "fora_rancho"],
         properties: {
           descricao_cupom: { type: "string", description: "Texto como está no cupom" },
           nome: { type: "string", description: "Nome genérico do item, sem marca. Ex.: Arroz tipo 1" },
@@ -54,6 +54,7 @@ const ESQUEMA = {
           desconto: { type: "number", description: "Desconto da linha 'desconto sobre item' logo abaixo; 0 se não houver" },
           valor_total: { type: "number", description: "Valor pago no item já com o desconto" },
           duvida: { type: "boolean", description: "true se algum número deste item ficou ilegível ou incerto" },
+          fora_rancho: { type: "boolean", description: "true se o item NÃO é de rancho (bem durável, não consumível): eletrodoméstico, eletrônico, cama/mesa/banho, roupa, brinquedo, ferramenta, móvel, decoração, panela" },
         },
       },
     },
@@ -73,6 +74,7 @@ Regras de leitura:
 - Confira a soma: a soma de (valor_total + desconto) dos itens deve dar o "Valor total R$" do cupom, e a soma dos descontos deve dar o "Desconto total". Se não bater, revise os itens antes de responder e explique em "observacoes".
 - Marque duvida = true no item cujo número você não conseguiu ler com certeza. Nunca invente item ou valor.
 - "nome" é o item genérico, sem marca, em português claro (ex.: "FEIJAO KICALDO FRAD" -> nome "Feijão fradinho", marca "Kicaldo").
+- "fora_rancho": o rancho é o que a casa consome e repõe todo mês: alimentos, bebidas, produtos de limpeza, higiene e descartáveis do dia a dia (papel higiênico, papel toalha, guardanapo, saco de lixo, esponja, papel-alumínio, filme plástico, filtro de café, fósforo, vela, pilha, ração de animal). Marque fora_rancho = true só para o que não é consumo do mês: eletrodomésticos e eletroportáteis (liquidificador, ventilador, ferro), eletrônicos e acessórios (fone, cabo, carregador, lâmpada), cama, mesa e banho (lençol, toalha, cobertor), roupas e calçados, brinquedos, ferramentas, móveis, decoração, utensílios duráveis (panela, jogo de copos, pote, garrafa térmica), material escolar e de escritório, presentes. Na dúvida, deixe false: o usuário marca à mão na conferência.
 ${produtosConhecidos.length ? `- O usuário já tem estes itens cadastrados. Quando for o mesmo produto, use exatamente o mesmo nome, para o histórico de preços casar:\n${produtosConhecidos.map((n) => "  • " + n).join("\n")}` : ""}
 
 Responda somente com o JSON pedido.`;
