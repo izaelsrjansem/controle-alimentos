@@ -47,7 +47,7 @@ function MinhaConta({ membro, email }) {
     <div className="panel">
       <h2>Minha conta</h2>
       <div className="conta">
-        <div><b>{membro?.nome || email}</b><div className="note">{email} · {membro?.papel === "admin" ? "administrador" : "membro"}</div></div>
+        <div><b>{membro?.nome || email.split("@")[0]}</b><div className="note">{email} · {membro?.papel === "admin" ? "administrador" : "membro"}</div></div>
       </div>
       {msg && <div className={msg.tipo} role="alert">{msg.texto}</div>}
       {aberto ? (
