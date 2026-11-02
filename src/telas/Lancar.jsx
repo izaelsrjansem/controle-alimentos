@@ -7,11 +7,11 @@ const linhaVazia = () => ({ chave: crypto.randomUUID(), nome: "", marca: "", cat
   tamanho: 1, medida: "un", quantidade: 1, valor_unitario: "", desconto: 0, valor_total: 0, duvida: false, descricao_cupom: "" });
 
 export default function Lancar({ dados, aoSalvar }) {
-  const [modo, setModo] = useState("colar");
+  const [modo, setModo] = useState("foto");
   return (
     <>
       <div className="row" role="tablist" aria-label="Como lançar">
-        {[["colar", "Colar leitura do Claude"], ["foto", "Foto do cupom"], ["manual", "Digitar a compra"], ["preco", "Anotar preço visto"]].map(([k, r]) => (
+        {[["foto", "Foto do cupom (leitura automática)"], ["colar", "Colar leitura do Claude"], ["manual", "Digitar a compra"], ["preco", "Anotar preço visto"]].map(([k, r]) => (
           <button key={k} className={"btn" + (modo === k ? "" : " ghost")} onClick={() => setModo(k)} aria-pressed={modo === k}>{r}</button>))}
       </div>
       {modo === "colar" && <Colar dados={dados} aoSalvar={aoSalvar} />}
