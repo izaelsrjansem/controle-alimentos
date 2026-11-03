@@ -9,9 +9,14 @@ const CHAVE = "bloqueio";            // { segundos, acao: "bloquear" | "sair", c
 const CHAVE_ATIVIDADE = "ultima-atividade";
 const CHAVE_TRAVADO = "travado";
 
+// Com Face ID ativo e tempo desligado, vale 30 min: o app só pede o rosto depois de ficar parado esse tempo
+const TEMPO_PADRAO_FACEID = 1800;
 export function lerBloqueio() {
-  try { return { segundos: 0, acao: "bloquear", credencial: null, ...JSON.parse(localStorage.getItem(CHAVE) || "{}") }; }
-  catch { return { segundos: 0, acao: "bloquear", credencial: null }; }
+  let c;
+  try { c = { segundos: 0, acao: "bloquear", credencial: null, ...JSON.parse(localStorage.getItem(CHAVE) || "{}") }; }
+  catch { c = { segundos: 0, acao: "bloquear", credencial: null }; }
+  if (c.credencial && !c.segundos) c.segundos = TEMPO_PADRAO_FACEID;
+  return c;
 }
 export function salvarBloqueio(c) {
   try { localStorage.setItem(CHAVE, JSON.stringify(c)); } catch { /* sem armazenamento */ }
@@ -27,7 +32,8 @@ export function limparBloqueio() { guardar(CHAVE_TRAVADO, null); guardar(CHAVE_A
 export function marcarAberto() { try { sessionStorage.setItem("aberto-ok", "1"); } catch { /* sem armazenamento */ } }
 const jaAberto = () => { try { return !!sessionStorage.getItem("aberto-ok"); } catch { return true; } };
 // Com Face ID ativo: abrir o app sempre começa travado
-const pedeAoAbrir = (c) => !!c.credencial && c.aoAbrir !== false && !jaAberto();
+// (pedir a cada abertura foi trocado por pedir só depois do tempo parado: a janela de chave-senha do iPhone incomodava)
+const pedeAoAbrir = () => false;
 // "Bloquear" do topo: trava na hora, sem sair da conta
 export function bloquearAgora() { guardar(CHAVE_TRAVADO, "1"); dispatchEvent(new Event("bloquear-agora")); }
 
@@ -193,7 +199,7 @@ export function OfertaFaceId({ email }) {
     try {
       const credencial = await cadastrarBiometria(email);
       const c = lerBloqueio();
-      salvarBloqueio({ ...c, credencial, acao: "bloquear", aoAbrir: true });
+      salvarBloqueio({ ...c, credencial, acao: "bloquear", segundos: c.segundos || TEMPO_PADRAO_FACEID });
       marcarAberto(); registrar("ativou entrada com Face ID / digital");
       setMostrar(false);
     } catch (e) { setMsg(e?.name === "NotAllowedError" ? "Cancelado. Você pode ativar depois em Ajustes → Segurança." : "Este aparelho não deixou usar o Face ID."); }
