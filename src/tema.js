@@ -59,6 +59,8 @@ export const PALETAS = [
   ["comida", "Cozinha", "Laranja e tomate; panela, talheres, pão", ["#fb923c", "#ef4444"], ["panela", "talheres", "tomate", "pao", "xicara", "maca"]],
   ["casa", "Casa", "Verde-água e terracota; casa e xícara", ["#2dd4bf", "#d97706"], ["casa", "xicara", "folha", "sacola", "carrinho", "panela"]],
   ["economia", "Economia", "Verde-dinheiro e dourado; cofrinho e moedas", ["#34d399", "#facc15"], ["cifrao", "moeda", "cofrinho", "grafico", "cupom", "carrinho"]],
+  ["vidro", "Vidro jateado", "Tudo translúcido sobre aquarela suave", ["#818cf8", "#f472b6"], []],
+  ["foto", "Minha foto", "Sua foto no fundo, com vidro jateado", ["#94a3b8", "#e2e8f0"], []],
   ["personalizado", "Meu tema", "Você escolhe cores, desenhos e foto", ["#22d3ee", "#f472b6"], []],
 ];
 
@@ -92,6 +94,48 @@ export async function prepararFotoFundo(arquivo) {
   return c.toDataURL("image/jpeg", 0.72);
 }
 
+/* ---------- Minha foto: a foto vira o fundo e dá as cores do sistema ---------- */
+const FOTO_PADRAO = { cor1: "#38bdf8", cor2: "#f472b6", veu: 0.35 };
+export function lerTemaFoto() {
+  try { return { ...FOTO_PADRAO, ...JSON.parse(ler("tema-foto-cfg", "{}")) }; } catch { return { ...FOTO_PADRAO }; }
+}
+export function salvarTemaFoto(c) { gravar("tema-foto-cfg", JSON.stringify(c)); aplicarTema(); }
+export const lerFotoTema = () => ler("tema-foto-vidro", null);
+export function salvarFotoTema(dataUrl) {
+  try { dataUrl ? localStorage.setItem("tema-foto-vidro", dataUrl) : localStorage.removeItem("tema-foto-vidro"); }
+  catch { throw new Error("A foto é grande demais para guardar neste aparelho. Escolha outra."); }
+  aplicarTema();
+}
+
+// tira duas cores vivas da foto: a média das partes mais coloridas e uma vizinha no círculo de cores
+export async function coresDaFoto(dataUrl) {
+  const img = await new Promise((ok, falha) => { const i = new Image(); i.onload = () => ok(i); i.onerror = falha; i.src = dataUrl; });
+  const c = document.createElement("canvas"); c.width = 48; c.height = 48;
+  const g = c.getContext("2d"); g.drawImage(img, 0, 0, 48, 48);
+  const px = g.getImageData(0, 0, 48, 48).data;
+  let r = 0, gg = 0, b = 0, peso = 0;
+  for (let i = 0; i < px.length; i += 4) {
+    const mx = Math.max(px[i], px[i + 1], px[i + 2]), mn = Math.min(px[i], px[i + 1], px[i + 2]);
+    const sat = mx ? (mx - mn) / mx : 0, w = sat * sat + 0.02;
+    r += px[i] * w; gg += px[i + 1] * w; b += px[i + 2] * w; peso += w;
+  }
+  const [h, , ] = rgbHsl(r / peso, gg / peso, b / peso);
+  return { cor1: hslHex(h, 0.75, 0.6), cor2: hslHex((h + 45) % 360, 0.7, 0.65) };
+}
+function rgbHsl(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
+  if (!d) return [0, 0, l];
+  const s = d / (1 - Math.abs(2 * l - 1));
+  const h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [(h * 60 + 360) % 360, s, l];
+}
+function hslHex(h, s, l) {
+  const k = (n) => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
+  const f = (n) => Math.round(255 * (l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1))));
+  return "#" + [f(0), f(8), f(4)].map((x) => x.toString(16).padStart(2, "0")).join("");
+}
+
 const hexRgb = (h) => { const n = parseInt(h.replace("#", ""), 16); return `${(n >> 16) & 255} ${(n >> 8) & 255} ${n & 255}`; };
 
 export function aplicarTema(pref = lerPreferencia()) {
@@ -102,7 +146,13 @@ export function aplicarTema(pref = lerPreferencia()) {
   raiz.dataset.paleta = paleta;
   const p = PALETAS.find(([k]) => k === paleta) ?? PALETAS[1];
   const s = raiz.style;
-  if (paleta === "personalizado") {
+  if (paleta === "foto") {
+    const c = lerTemaFoto(), foto = lerFotoTema();
+    s.setProperty("--acc-rgb", hexRgb(c.cor1)); s.setProperty("--acc2-rgb", hexRgb(c.cor2));
+    s.setProperty("--padrao", "none");
+    s.setProperty("--foto", foto ? `url("${foto}")` : "none");
+    s.setProperty("--veu", tema === "claro" ? `rgb(255 255 255 / ${c.veu})` : `rgb(6 10 19 / ${c.veu + 0.1})`);
+  } else if (paleta === "personalizado") {
     const c = lerPersonalizado();
     s.setProperty("--acc-rgb", hexRgb(c.cor1)); s.setProperty("--acc2-rgb", hexRgb(c.cor2));
     s.setProperty("--padrao", gerarFundo(c.figuras, c.cor1, c.intensidade, c.escala));

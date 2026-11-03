@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../supabase.js";
 import { lerPreferencia, salvarPreferencia, PALETAS, lerPaleta, salvarPaleta, FIGURAS, gerarFundo,
-  lerPersonalizado, salvarPersonalizado, lerFotoFundo, salvarFotoFundo, prepararFotoFundo, vibrar } from "../tema.js";
+  lerPersonalizado, salvarPersonalizado, lerFotoFundo, salvarFotoFundo, prepararFotoFundo, vibrar,
+  lerTemaFoto, salvarTemaFoto, lerFotoTema, salvarFotoTema, coresDaFoto } from "../tema.js";
 import { CampoSenha } from "./Login.jsx";
 import { lerBloqueio, salvarBloqueio, biometriaDisponivel, cadastrarBiometria } from "../bloqueio.jsx";
 
@@ -204,12 +205,15 @@ function Aparencia() {
       <div className="lbl">Tema</div>
       <div className="temas" role="group" aria-label="Tema">
         {PALETAS.map(([k, t, d, [c1, c2], figuras]) => {
-          const pers = k === "personalizado" ? lerPersonalizado() : null;
-          const fundo = gerarFundo(pers ? pers.figuras : figuras, pers ? pers.cor1 : c1, 0.55, 0.5);
+          const pers = k === "personalizado" ? lerPersonalizado() : k === "foto" ? lerTemaFoto() : null;
+          const fotoTema = k === "foto" ? lerFotoTema() : null;
+          const fundo = gerarFundo(pers?.figuras ?? figuras, pers ? pers.cor1 : c1, 0.55, 0.5);
+          const amostra = fotoTema ? `url("${fotoTema}")`
+            : k === "vidro" ? "radial-gradient(circle at 20% 25%,#38bdf8aa,transparent 55%),radial-gradient(circle at 85% 20%,#e879f9aa,transparent 55%),radial-gradient(circle at 60% 90%,#34d399aa,transparent 55%)"
+            : `${fundo === "none" ? "" : fundo + ","}linear-gradient(135deg, ${pers ? pers.cor1 : c1}33, ${pers ? pers.cor2 : c2}55)`;
           return (
             <button key={k} type="button" className="tema" aria-pressed={paleta === k} onClick={() => escolherTema(k)}>
-              <span className="tema-amostra" aria-hidden="true"
-                style={{ backgroundImage: `${fundo === "none" ? "" : fundo + ","}linear-gradient(135deg, ${pers ? pers.cor1 : c1}33, ${pers ? pers.cor2 : c2}55)` }}>
+              <span className={"tema-amostra" + (fotoTema ? " com-foto" : "")} aria-hidden="true" style={{ backgroundImage: amostra }}>
                 <i style={{ background: `linear-gradient(135deg, ${pers ? pers.cor1 : c1}, ${pers ? pers.cor2 : c2})` }} />
               </span>
               <b>{t}</b><small>{d}</small>
@@ -217,7 +221,55 @@ function Aparencia() {
         })}
       </div>
       {paleta === "personalizado" && <MeuTema />}
+      {paleta === "foto" && <MinhaFoto />}
       <p className="note">A escolha fica guardada neste aparelho. Cada pessoa da casa pode usar um tema diferente.</p>
+    </div>
+  );
+}
+
+/* ---------- Minha foto: foto de fundo com vidro jateado; cores tiradas da foto ---------- */
+function MinhaFoto() {
+  const [c, setC] = useState(lerTemaFoto);
+  const [foto, setFoto] = useState(lerFotoTema);
+  const [msg, setMsg] = useState(null);
+  const [ocupado, setOcupado] = useState(false);
+  const mudar = (novo) => { const n = { ...c, ...novo }; setC(n); salvarTemaFoto(n); };
+
+  async function escolher(e) {
+    const a = e.target.files?.[0]; e.target.value = "";
+    if (!a) return;
+    setMsg(null); setOcupado(true);
+    try {
+      const d = await prepararFotoFundo(a);
+      salvarFotoTema(d); setFoto(d);
+      mudar(await coresDaFoto(d));
+      vibrar();
+    } catch (erro) { setMsg(erro.message || "Não consegui usar essa imagem."); }
+    setOcupado(false);
+  }
+
+  return (
+    <div className="meu-tema">
+      <div className="lbl">Sua foto ou imagem</div>
+      <div className="row">
+        {foto && <img src={foto} alt="Foto de fundo escolhida" className="mini-foto" />}
+        <label className="btn" style={{ display: "inline-flex" }}>{ocupado ? "Preparando…" : foto ? "Trocar foto" : "Escolher foto ou imagem"}
+          <input type="file" accept="image/*" hidden onChange={escolher} /></label>
+        {foto && <button className="sair" type="button" onClick={() => { salvarFotoTema(null); setFoto(null); }}>Tirar a foto</button>}
+      </div>
+      {!foto && <p className="note">Pode ser da galeria, uma foto da família, da casa, de comida ou qualquer imagem salva no celular.</p>}
+      {foto && <>
+        <label className="campo-c">Quanto a foto aparece
+          <input type="range" min="0.05" max="0.7" step="0.05" value={0.75 - c.veu} onChange={(e) => mudar({ veu: +(0.75 - Number(e.target.value)).toFixed(2) })} /></label>
+        <div className="lbl">Cores (tiradas da foto; pode trocar)</div>
+        <div className="row">
+          <label className="cor"><input type="color" value={c.cor1} onChange={(e) => mudar({ cor1: e.target.value })} /> Principal</label>
+          <label className="cor"><input type="color" value={c.cor2} onChange={(e) => mudar({ cor2: e.target.value })} /> Secundária</label>
+          <button className="btn ghost" type="button" onClick={async () => { vibrar(); mudar(await coresDaFoto(foto)); }}>Pegar da foto de novo</button>
+        </div>
+      </>}
+      <p className="note">Os cartões ficam em vidro jateado por cima da foto, para os textos continuarem fáceis de ler.</p>
+      {msg && <div className="erro">{msg}</div>}
     </div>
   );
 }

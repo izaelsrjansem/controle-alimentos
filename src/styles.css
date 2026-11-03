@@ -517,3 +517,40 @@ input[type="range"]{padding:0;accent-color:var(--accent)}
 .note{font-weight:450}
 ::placeholder{color:var(--muted);opacity:.75}
 :root[data-theme="claro"] .lbl,:root[data-theme="claro"] th{color:#3b4860}
+
+/* ---------- camada fixa de fundo (foto/aquarela): fica parada atrás de tudo, inclusive no iPhone ---------- */
+body{background-image:var(--padrao),radial-gradient(900px 500px at 85% -10%,var(--brilho1),transparent 60%),radial-gradient(800px 500px at -10% 10%,var(--brilho2),transparent 60%);
+  background-size:auto,auto,auto;background-position:0 0,0 0,0 0}
+:root::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;
+  background:linear-gradient(var(--veu),var(--veu)),var(--foto);background-size:cover;background-position:center}
+
+/* ---------- Vidro jateado e Minha foto: superfícies de vidro fosco ---------- */
+:root[data-paleta="vidro"]{--acc-rgb:129 140 248; --acc2-rgb:244 114 182; --bg:#0c1022}
+:root[data-theme="claro"][data-paleta="vidro"]{--acc-rgb:79 70 229; --acc2-rgb:219 39 119; --bg:#eef0fb}
+:root[data-paleta="vidro"]::before{background:
+  radial-gradient(42% 34% at 12% 18%,rgb(56 189 248 / .55),transparent 70%),
+  radial-gradient(38% 30% at 88% 12%,rgb(232 121 249 / .5),transparent 70%),
+  radial-gradient(46% 38% at 72% 82%,rgb(52 211 153 / .42),transparent 70%),
+  radial-gradient(40% 34% at 18% 88%,rgb(251 191 36 / .38),transparent 70%),
+  radial-gradient(30% 26% at 50% 50%,rgb(129 140 248 / .35),transparent 70%)}
+:root[data-theme="claro"][data-paleta="vidro"]::before{opacity:.7}
+:root:is([data-paleta="vidro"],[data-paleta="foto"]){
+  --surface:rgba(255,255,255,.08); --surface-solid:rgba(16,20,36,.55); --raise:rgba(255,255,255,.06);
+  --header-bg:rgba(12,16,32,.32); --vidro:rgba(12,16,32,.28); --field-bg:rgba(255,255,255,.07);
+  --line:rgba(255,255,255,.14); --line-strong:rgba(255,255,255,.24); --brilho1:transparent; --brilho2:transparent}
+:root[data-theme="claro"]:is([data-paleta="vidro"],[data-paleta="foto"]){
+  --surface:rgba(255,255,255,.38); --surface-solid:rgba(255,255,255,.6); --raise:rgba(255,255,255,.3);
+  --header-bg:rgba(255,255,255,.42); --vidro:rgba(255,255,255,.38); --field-bg:rgba(255,255,255,.55);
+  --line:rgba(255,255,255,.55); --line-strong:rgba(255,255,255,.75)}
+:root:is([data-paleta="vidro"],[data-paleta="foto"]) body::after{display:none}
+:root:is([data-paleta="vidro"],[data-paleta="foto"]) :is(.panel,.kpi,.cartao,.secao,.origem,.tema,.resumo-fixo,.meu-tema){
+  backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);
+  box-shadow:0 10px 30px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.35)}
+:root:is([data-paleta="vidro"],[data-paleta="foto"]) .cartao{background:linear-gradient(145deg,rgba(255,255,255,.16),rgba(255,255,255,.04)),var(--surface)}
+:root[data-theme="claro"]:is([data-paleta="vidro"],[data-paleta="foto"]) .cartao{background:linear-gradient(145deg,rgba(255,255,255,.55),rgba(255,255,255,.25))}
+:root:is([data-paleta="vidro"],[data-paleta="foto"]) .kpi.main{background:linear-gradient(135deg,rgb(var(--acc-rgb) / .22),rgb(var(--acc2-rgb) / .18)),var(--surface)}
+:root:is([data-paleta="vidro"],[data-paleta="foto"]) header.top{background:var(--header-bg);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+@media (max-width:720px){:root:is([data-paleta="vidro"],[data-paleta="foto"]) header.top{backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}}
+:root:is([data-paleta="vidro"],[data-paleta="foto"]) .tela-bloqueio{background:transparent;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px)}
+/* miniatura do tema Minha foto */
+.tema-amostra.com-foto{background-size:cover;background-position:center}
