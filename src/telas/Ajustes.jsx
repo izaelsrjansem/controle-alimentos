@@ -211,7 +211,7 @@ function Aparencia() {
           const fotoTema = k === "foto" ? lerFotoTema() : null;
           const fundo = gerarFundo(pers?.figuras ?? figuras, pers ? pers.cor1 : c1, 0.55, 0.5);
           const amostra = fotoTema ? `url("${fotoTema}")`
-            : k === "vidro" ? "radial-gradient(circle at 20% 25%,#38bdf8aa,transparent 55%),radial-gradient(circle at 85% 20%,#e879f9aa,transparent 55%),radial-gradient(circle at 60% 90%,#34d399aa,transparent 55%)"
+            : k === "vidro" ? "linear-gradient(rgba(255,255,255,.45),rgba(255,255,255,.45)) 18% 22% / 64% 56% no-repeat,linear-gradient(#94a3b8,#94a3b8)"
             : `${fundo === "none" ? "" : fundo + ","}linear-gradient(135deg, ${pers ? pers.cor1 : c1}33, ${pers ? pers.cor2 : c2}55)`;
           return (
             <button key={k} type="button" className="tema" aria-pressed={paleta === k} onClick={() => escolherTema(k)}>

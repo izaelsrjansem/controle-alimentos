@@ -568,3 +568,32 @@ body{background-image:var(--padrao),radial-gradient(900px 500px at 85% -10%,var(
 .oferta-faceid h2::before{display:none}
 .oferta-faceid .rosto{width:64px;height:64px;color:var(--accent);filter:drop-shadow(0 0 12px rgb(var(--acc-rgb) / .55))}
 .oferta-faceid .btn{width:100%}
+
+/* ---------- Vidro jateado: fundo sólido, sem aquarela; tudo transparente por cima ---------- */
+:root[data-paleta="vidro"]{--bg:#141a26; --acc-rgb:148 163 184; --acc2-rgb:203 213 225; --brilho1:transparent; --brilho2:transparent}
+:root[data-theme="claro"][data-paleta="vidro"]{--bg:#e6eaf0; --acc-rgb:71 85 105; --acc2-rgb:100 116 139}
+:root[data-paleta="vidro"]::before{background:none!important}
+:root[data-theme="claro"][data-paleta="vidro"]::before{opacity:1}
+:root[data-paleta="vidro"]{--surface:rgba(255,255,255,.06); --surface-solid:rgba(255,255,255,.08); --raise:rgba(255,255,255,.05);
+  --header-bg:rgba(255,255,255,.05); --vidro:rgba(255,255,255,.06); --field-bg:rgba(255,255,255,.06);
+  --line:rgba(255,255,255,.14); --line-strong:rgba(255,255,255,.22)}
+:root[data-theme="claro"][data-paleta="vidro"]{--surface:rgba(255,255,255,.45); --surface-solid:rgba(255,255,255,.55); --raise:rgba(255,255,255,.4);
+  --header-bg:rgba(255,255,255,.4); --vidro:rgba(255,255,255,.45); --field-bg:rgba(255,255,255,.6);
+  --line:rgba(255,255,255,.7); --line-strong:rgba(255,255,255,.9)}
+:root[data-paleta="vidro"] :is(.cartao,.kpi.main){background:var(--surface)!important}
+:root[data-paleta="vidro"] :is(.cartao,.secao,.panel,.kpi)::before{opacity:.35}
+:root[data-paleta="vidro"] .cartao::after,:root[data-paleta="vidro"] .kpi.main::after{display:none}
+:root[data-paleta="vidro"] :is(button.btn,a.btn,label.btn):not(.ghost),:root[data-paleta="vidro"] .origem.principal{background:rgb(var(--acc-rgb) / .85);color:#fff;box-shadow:none}
+:root[data-paleta="vidro"] .bar .fill{background:rgb(var(--acc-rgb));box-shadow:none}
+:root[data-paleta="vidro"] .kpi.main .money{text-shadow:none}
+
+/* ---------- Masculino: cores sólidas (sem degradês nem brilhos) ---------- */
+:root[data-paleta="masculino"]{--brilho1:transparent; --brilho2:transparent; --acc2-rgb:var(--acc-rgb)}
+:root[data-paleta="masculino"] :is(button.btn,a.btn,label.btn):not(.ghost),:root[data-paleta="masculino"] .origem.principal{background:var(--accent);box-shadow:0 4px 12px rgb(var(--acc-rgb) / .25)}
+:root[data-paleta="masculino"] .kpi.main{background:rgb(var(--acc-rgb) / .14),var(--surface-solid);background:color-mix(in srgb,var(--accent) 14%,var(--surface-solid))}
+:root[data-paleta="masculino"] .kpi.main::after,:root[data-paleta="masculino"] .cartao::after{display:none}
+:root[data-paleta="masculino"] .kpi.main .money{text-shadow:none}
+:root[data-paleta="masculino"] .bar .fill{background:var(--accent);box-shadow:none}
+:root[data-paleta="masculino"] :is(.cartao,.panel)::before,:root[data-paleta="masculino"] h2::before,:root[data-paleta="masculino"] nav.tabs::after,:root[data-paleta="masculino"] header.top::after{background:var(--accent)}
+:root[data-paleta="masculino"] .cartao{background:var(--surface)}
+:root[data-theme="claro"][data-paleta="masculino"] .cartao{background:#fff}

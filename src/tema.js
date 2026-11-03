@@ -53,13 +53,13 @@ export function gerarFundo(figuras, cor, opacidade = 0.13, escala = 1) {
 export const PALETAS = [
   ["limpo", "Sem tema", "Tela limpa, sem desenhos", ["#818cf8", "#94a3b8"], []],
   ["padrao", "Padrão", "Ciano e violeta, grade técnica", ["#22d3ee", "#a78bfa"], []],
-  ["masculino", "Masculino", "Azul-marinho e grafite; carrinho, cupom, cifrão", ["#60a5fa", "#94a3b8"], ["carrinho", "cupom", "cifrao", "grafico", "sacola", "moeda"]],
+  ["masculino", "Masculino", "Azul-marinho e grafite, cores sólidas; carrinho, cupom, cifrão", ["#60a5fa", "#94a3b8"], ["carrinho", "cupom", "cifrao", "grafico", "sacola", "moeda"]],
   ["feminino", "Feminino", "Rosa e lilás; morango, flor, cupcake", ["#f472b6", "#c084fc"], ["morango", "flor", "cupcake", "coracao", "uva", "estrela"]],
   ["feira", "Feira", "Verde e laranja; frutas e legumes", ["#4ade80", "#fb923c"], ["maca", "cenoura", "banana", "folha", "uva", "tomate"]],
   ["comida", "Cozinha", "Laranja e tomate; panela, talheres, pão", ["#fb923c", "#ef4444"], ["panela", "talheres", "tomate", "pao", "xicara", "maca"]],
   ["casa", "Casa", "Verde-água e terracota; casa e xícara", ["#2dd4bf", "#d97706"], ["casa", "xicara", "folha", "sacola", "carrinho", "panela"]],
   ["economia", "Economia", "Verde-dinheiro e dourado; cofrinho e moedas", ["#34d399", "#facc15"], ["cifrao", "moeda", "cofrinho", "grafico", "cupom", "carrinho"]],
-  ["vidro", "Vidro jateado", "Tudo translúcido sobre aquarela suave", ["#818cf8", "#f472b6"], []],
+  ["vidro", "Vidro jateado", "Fundo sólido, tudo transparente por cima", ["#94a3b8", "#cbd5e1"], []],
   ["foto", "Minha foto", "Sua foto no fundo, com vidro jateado", ["#94a3b8", "#e2e8f0"], []],
   ["personalizado", "Meu tema", "Você escolhe cores, desenhos e foto", ["#22d3ee", "#f472b6"], []],
 ];
