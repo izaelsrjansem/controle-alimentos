@@ -76,7 +76,7 @@ function Seguranca({ email }) {
     setMsg(null);
     try {
       const credencial = await cadastrarBiometria(email);
-      mudar({ credencial, acao: "bloquear", segundos: cfg.segundos || 60 });
+      mudar({ credencial, acao: "bloquear", aoAbrir: true }); try { sessionStorage.setItem("aberto-ok", "1"); } catch { /* sem armazenamento */ }
       registrar("ativou Face ID / digital neste aparelho");
       setMsg({ tipo: "ok", texto: "Face ID / digital ativado neste aparelho." });
     } catch (e) {
@@ -119,10 +119,13 @@ function Seguranca({ email }) {
           <div className="row"><span className="tag good">ativado neste aparelho</span>
             <button className="btn ghost" type="button" onClick={ativarBio}>Cadastrar de novo</button>
             <button className="sair" type="button" onClick={() => { mudar({ credencial: null }); registrar("desativou Face ID / digital neste aparelho"); }}>Desativar</button></div>
-        ) : (
-          <div className="row"><button className="btn" type="button" onClick={ativarBio} disabled={temBio === null}>Ativar Face ID / digital</button>
-            <span className="note">O celular pede o rosto ou a digital para confirmar.</span></div>
-        )}
+        ) : null}
+      {cfg.credencial && <label className="lembrar"><input type="checkbox" checked={cfg.aoAbrir !== false} onChange={(e) => { vibrar(); mudar({ aoAbrir: e.target.checked }); }} />
+        Pedir Face ID sempre que abrir o app (no lugar da senha)</label>}
+      {temBio === false || cfg.credencial ? null : (
+        <div className="row"><button className="btn" type="button" onClick={ativarBio} disabled={temBio === null}>Ativar Face ID / digital</button>
+          <span className="note">O celular pede o rosto ou a digital para confirmar.</span></div>
+      )}
       {msg && <div className={msg.tipo} role="alert">{msg.texto}</div>}
       <p className="note">Estas escolhas valem só para este aparelho. Cada pessoa configura o seu.</p>
     </div>

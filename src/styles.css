@@ -554,3 +554,17 @@ body{background-image:var(--padrao),radial-gradient(900px 500px at 85% -10%,var(
 :root:is([data-paleta="vidro"],[data-paleta="foto"]) .tela-bloqueio{background:transparent;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px)}
 /* miniatura do tema Minha foto */
 .tema-amostra.com-foto{background-size:cover;background-position:center}
+
+/* tela travada com Face ID: a tela inteira é o botão */
+.tela-bloqueio.tocar{cursor:pointer;-webkit-tap-highlight-color:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px}
+.tocar-centro{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
+.tocar-centro > svg:first-child{width:64px;height:64px}
+.tocar-centro .rosto{width:84px;height:84px;color:var(--accent);filter:drop-shadow(0 0 14px rgb(var(--acc-rgb) / .6));animation:pulso 1.8s ease-in-out infinite}
+.tocar-centro b{font-family:var(--font-head);font-size:1.25rem}
+.usar-senha{position:absolute;bottom:calc(28px + env(safe-area-inset-bottom,0px));font-size:.95rem}
+.oferta-faceid{position:fixed;inset:0;z-index:40;display:grid;place-items:end center;padding:16px 16px calc(20px + env(safe-area-inset-bottom,0px));background:rgba(2,5,10,.45);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.oferta-faceid .panel{width:min(420px,100%);align-items:center;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.45),var(--glow);background:var(--surface-solid)}
+.oferta-faceid h2{justify-content:center}
+.oferta-faceid h2::before{display:none}
+.oferta-faceid .rosto{width:64px;height:64px;color:var(--accent);filter:drop-shadow(0 0 12px rgb(var(--acc-rgb) / .55))}
+.oferta-faceid .btn{width:100%}

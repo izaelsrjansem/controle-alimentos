@@ -23,6 +23,14 @@ const ler = (k) => { try { return localStorage.getItem(k); } catch { return null
 // ao sair da conta: o próximo login começa do zero (sem tela travada nem tempo antigo)
 export function limparBloqueio() { guardar(CHAVE_TRAVADO, null); guardar(CHAVE_ATIVIDADE, null); }
 
+// Esta abertura do app já foi liberada (senha ou Face ID); vale até fechar o app
+export function marcarAberto() { try { sessionStorage.setItem("aberto-ok", "1"); } catch { /* sem armazenamento */ } }
+const jaAberto = () => { try { return !!sessionStorage.getItem("aberto-ok"); } catch { return true; } };
+// Com Face ID ativo: abrir o app sempre começa travado
+const pedeAoAbrir = (c) => !!c.credencial && c.aoAbrir !== false && !jaAberto();
+// "Bloquear" do topo: trava na hora, sem sair da conta
+export function bloquearAgora() { guardar(CHAVE_TRAVADO, "1"); dispatchEvent(new Event("bloquear-agora")); }
+
 const registrar = (acao) => supabase.rpc("registrar", { p_acao: acao, p_descricao: null }).then(() => {}, () => {});
 
 /* ---------- Face ID / digital (WebAuthn com o autenticador do aparelho) ---------- */
@@ -59,7 +67,7 @@ export default function Bloqueio({ email }) {
   const [cfg, setCfg] = useState(lerBloqueio);
   const [travado, setTravado] = useState(() => {
     const c = lerBloqueio();
-    if (ler(CHAVE_TRAVADO)) return true;
+    if (ler(CHAVE_TRAVADO) || pedeAoAbrir(c)) return true;
     const ultima = Number(ler(CHAVE_ATIVIDADE));
     return c.segundos > 0 && c.acao === "bloquear" && ultima > 0 && Date.now() - ultima > c.segundos * 1000;
   });
@@ -67,8 +75,10 @@ export default function Bloqueio({ email }) {
 
   useEffect(() => {
     const f = () => setCfg(lerBloqueio());
+    const travar = () => setTravado(true);
     addEventListener("bloqueio-mudou", f);
-    return () => removeEventListener("bloqueio-mudou", f);
+    addEventListener("bloquear-agora", travar);
+    return () => { removeEventListener("bloqueio-mudou", f); removeEventListener("bloquear-agora", travar); };
   }, []);
 
   const disparar = useCallback(() => {
@@ -92,7 +102,7 @@ export default function Bloqueio({ email }) {
     return () => { eventos.forEach((e) => removeEventListener(e, marcar, { capture: true })); document.removeEventListener("visibilitychange", aoVoltar); clearInterval(t); };
   }, [cfg.segundos, travado, disparar]);
 
-  const liberar = (como) => { guardar(CHAVE_TRAVADO, null); guardar(CHAVE_ATIVIDADE, String(Date.now())); ultima.current = Date.now(); setTravado(false); registrar(como); };
+  const liberar = (como) => { marcarAberto(); guardar(CHAVE_TRAVADO, null); guardar(CHAVE_ATIVIDADE, String(Date.now())); ultima.current = Date.now(); setTravado(false); registrar(como); };
 
   if (!travado) return null;
   return <TelaBloqueada email={email} credencial={cfg.credencial} liberar={liberar} />;
@@ -102,16 +112,20 @@ function TelaBloqueada({ email, credencial, liberar }) {
   const [senha, setSenha] = useState("");
   const [msg, setMsg] = useState(null);
   const [ocupado, setOcupado] = useState(false);
+  const [comSenhaAberta, setComSenhaAberta] = useState(!credencial);
+  const pedindo = useRef(false);
   const tentou = useRef(false);
 
-  const comBiometria = useCallback(async () => {
-    setMsg(null);
-    try { await confirmarBiometria(credencial); liberar("desbloqueou com Face ID / digital"); }
-    catch { setMsg("Não foi possível confirmar pelo Face ID. Tente de novo ou use a senha."); }
+  const comBiometria = useCallback(async (silencioso = false) => {
+    if (pedindo.current) return;
+    pedindo.current = true; setMsg(null);
+    try { await confirmarBiometria(credencial); liberar("entrou com Face ID / digital"); }
+    catch { if (!silencioso) setMsg("Não deu para confirmar pelo Face ID. Toque de novo ou use a senha."); }
+    pedindo.current = false;
   }, [credencial, liberar]);
 
-  // abre o Face ID sozinho na primeira vez (alguns aparelhos exigem um toque; aí o botão resolve)
-  useEffect(() => { if (credencial && !tentou.current) { tentou.current = true; comBiometria(); } }, [credencial, comBiometria]);
+  // tenta abrir o Face ID sozinho; o iPhone costuma exigir um toque, e aí qualquer toque na tela serve
+  useEffect(() => { if (credencial && !tentou.current) { tentou.current = true; comBiometria(true); } }, [credencial, comBiometria]);
 
   async function comSenha(e) {
     e.preventDefault();
@@ -123,12 +137,29 @@ function TelaBloqueada({ email, credencial, liberar }) {
     liberar("desbloqueou com senha");
   }
 
+  if (credencial && !comSenhaAberta) {
+    return (
+      <div className="tela-bloqueio tocar" role="button" tabIndex={0} aria-label="Toque para entrar com Face ID"
+        onClick={() => comBiometria()} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && comBiometria()}>
+        <div className="tocar-centro">
+          <Logo />
+          <svg className="rosto" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" aria-hidden="true">
+            <path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2" /><path d="M9 9v1M15 9v1M12 9v4h-1M9.5 16a4 4 0 0 0 5 0" /></svg>
+          <b>Toque na tela para entrar</b>
+          <span className="note">Despensa e Preços · {email}</span>
+          {msg && <div className="erro" role="alert">{msg}</div>}
+        </div>
+        <button className="sair usar-senha" type="button" onClick={(e) => { e.stopPropagation(); setComSenhaAberta(true); }}>Usar a senha</button>
+      </div>
+    );
+  }
+
   return (
     <div className="tela-bloqueio" role="dialog" aria-modal="true" aria-labelledby="titulo-bloqueio">
       <div className="panel">
-        <div className="logo"><Logo /><div><small>Despensa e Preços</small><h1 id="titulo-bloqueio">Tela bloqueada</h1></div></div>
-        <p className="note">Bloqueada por tempo sem uso. {email}</p>
-        {credencial && <button className="btn grande" type="button" onClick={comBiometria}>
+        <div className="logo"><Logo /><div><small>Despensa e Preços</small><h1 id="titulo-bloqueio">Entrar</h1></div></div>
+        <p className="note">Entre com a senha. {email}</p>
+        {credencial && <button className="btn grande" type="button" onClick={() => comBiometria()}>
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true" style={{ verticalAlign: "-5px", marginRight: 8 }}>
             <path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2" /><path d="M9 9v1M15 9v1M12 9v4h-1M9.5 16a4 4 0 0 0 5 0" /></svg>
           Desbloquear com Face ID</button>}
@@ -140,6 +171,45 @@ function TelaBloqueada({ email, credencial, liberar }) {
         </form>
         {msg && <div className="erro" role="alert">{msg}</div>}
         <button className="sair" type="button" onClick={() => { guardar(CHAVE_TRAVADO, null); supabase.auth.signOut(); }}>Sair e entrar com outra conta</button>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Oferta única: depois de entrar com a senha, ativar o Face ID para as próximas vezes ---------- */
+export function OfertaFaceId({ email }) {
+  const [mostrar, setMostrar] = useState(false);
+  const [msg, setMsg] = useState(null);
+  useEffect(() => {
+    let recusou = false;
+    try { recusou = localStorage.getItem("oferta-faceid") === "nao"; } catch { /* sem armazenamento */ }
+    if (recusou || lerBloqueio().credencial) return;
+    biometriaDisponivel().then(setMostrar);
+  }, []);
+  if (!mostrar) return null;
+
+  async function ativar() {
+    setMsg(null);
+    try {
+      const credencial = await cadastrarBiometria(email);
+      const c = lerBloqueio();
+      salvarBloqueio({ ...c, credencial, acao: "bloquear", aoAbrir: true });
+      marcarAberto(); registrar("ativou entrada com Face ID / digital");
+      setMostrar(false);
+    } catch (e) { setMsg(e?.name === "NotAllowedError" ? "Cancelado. Você pode ativar depois em Ajustes → Segurança." : "Este aparelho não deixou usar o Face ID."); }
+  }
+  const agoraNao = () => { try { localStorage.setItem("oferta-faceid", "nao"); } catch { /* sem armazenamento */ } setMostrar(false); };
+
+  return (
+    <div className="oferta-faceid" role="dialog" aria-labelledby="titulo-oferta">
+      <div className="panel">
+        <svg className="rosto" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" aria-hidden="true">
+          <path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2" /><path d="M9 9v1M15 9v1M12 9v4h-1M9.5 16a4 4 0 0 0 5 0" /></svg>
+        <h2 id="titulo-oferta">Entrar com Face ID nas próximas vezes?</h2>
+        <p className="note">Sem digitar senha: ao abrir o app, é só olhar para o celular (ou usar a digital).</p>
+        {msg && <div className="erro">{msg}</div>}
+        <button className="btn grande" type="button" onClick={ativar}>Ativar Face ID</button>
+        <button className="sair" type="button" onClick={agoraNao}>Agora não</button>
       </div>
     </div>
   );

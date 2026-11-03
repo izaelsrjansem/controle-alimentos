@@ -9,7 +9,7 @@ import Comparar from "./telas/Comparar.jsx";
 import Lancar from "./telas/Lancar.jsx";
 import Ajustes from "./telas/Ajustes.jsx";
 import InstalarApp from "./instalar.jsx";
-import Bloqueio, { limparBloqueio } from "./bloqueio.jsx";
+import Bloqueio, { limparBloqueio, OfertaFaceId, bloquearAgora, lerBloqueio } from "./bloqueio.jsx";
 import { ICONES, Logo } from "./icones.jsx";
 
 // [chave, rótulo, rótulo curto da barra inferior do celular]
@@ -71,11 +71,14 @@ function Painel({ email, userId }) {
   return (
     <>
       <Bloqueio email={email} />
+      <OfertaFaceId email={email} />
       <header className="top">
         <div className="wrap">
           <div className="brand">
             <div className="logo"><Logo /><div><small>Sistema de compras</small><h1>Despensa e Preços</h1></div></div>
-            <span className="status"><InstalarApp /><span className="pulso" aria-hidden="true" />{membro?.nome || email} ·<button className="sair" onClick={() => supabase.auth.signOut()}>Sair</button></span>
+            <span className="status"><InstalarApp /><span className="pulso" aria-hidden="true" />{membro?.nome || email} ·{lerBloqueio().credencial
+              ? <button className="sair" onClick={bloquearAgora} title="Trava a tela; para entrar de novo, Face ID">Bloquear</button>
+              : <button className="sair" onClick={() => supabase.auth.signOut()}>Sair</button>}</span>
           </div>
         </div>
       </header>

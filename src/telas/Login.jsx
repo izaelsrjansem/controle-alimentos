@@ -57,6 +57,8 @@ export default function Login() {
     setMsg(null); setEnviando(true);
     let r;
     try {
+      // entrando com senha: esta abertura já está liberada (marcado antes, porque o app abre assim que o login confirma)
+      if (modo === "entrar") { try { sessionStorage.setItem("aberto-ok", "1"); } catch { /* sem armazenamento */ } }
       if (modo === "entrar") r = await supabase.auth.signInWithPassword({ email: mail, password: senha });
       else if (modo === "criar") r = await supabase.auth.signUp({ email: mail, password: senha, options: { emailRedirectTo: location.origin } });
       else r = await supabase.auth.resetPasswordForEmail(mail, { redirectTo: location.origin });
