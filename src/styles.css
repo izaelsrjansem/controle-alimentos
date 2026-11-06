@@ -597,3 +597,25 @@ body{background-image:var(--padrao),radial-gradient(900px 500px at 85% -10%,var(
 :root[data-paleta="masculino"] :is(.cartao,.panel)::before,:root[data-paleta="masculino"] h2::before,:root[data-paleta="masculino"] nav.tabs::after,:root[data-paleta="masculino"] header.top::after{background:var(--accent)}
 :root[data-paleta="masculino"] .cartao{background:var(--surface)}
 :root[data-theme="claro"][data-paleta="masculino"] .cartao{background:#fff}
+
+/* ---------- compras do mês: cada compra num cartão de vidro (celular) ---------- */
+@media (max-width:720px){
+  #compras-do-mes .tablewrap{overflow:visible}
+  table.compras{border-collapse:separate;border-spacing:0}
+  table.compras tbody{display:flex;flex-direction:column;gap:12px}
+  table.compras tr:not(.detalhe){position:relative;padding:14px 16px;border:1px solid var(--line-strong)!important;border-radius:16px;overflow:hidden;
+    background:linear-gradient(145deg,rgba(255,255,255,.09),rgba(255,255,255,.02) 55%),var(--surface);
+    backdrop-filter:blur(16px) saturate(140%);-webkit-backdrop-filter:blur(16px) saturate(140%);
+    box-shadow:0 10px 26px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.12)}
+  table.compras tr:not(.detalhe)::before{content:"";position:absolute;inset:0 0 auto;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));opacity:.75}
+  :root[data-theme="claro"] table.compras tr:not(.detalhe){background:linear-gradient(145deg,rgba(255,255,255,.95),rgba(255,255,255,.65)),var(--surface);box-shadow:0 8px 22px rgba(15,40,80,.1),inset 0 1px 0 #fff}
+  table.compras tr:not(.detalhe):hover td{background:none}
+  table.compras td:nth-child(5){font-size:1.2rem;color:var(--accent)}
+  table.compras td:nth-child(5) b{font-weight:700}
+  table.compras td:nth-child(2){font-weight:600}
+  table.compras td:nth-child(2) .note{font-weight:450}
+  table.compras td:nth-child(6){padding-top:6px!important;margin-top:4px;border-top:1px dashed var(--line)!important}
+  table.compras tr.duvida{background:var(--warn-soft)!important;border-color:rgb(251 191 36 / .55)!important}
+  table.compras tr.detalhe td{border:0;padding:0}
+  table.compras tr.detalhe > td > *{margin-top:-4px}
+}
