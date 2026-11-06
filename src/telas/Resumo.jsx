@@ -246,17 +246,15 @@ function ItensDaCompra({ compra, prod, aoMudar, aoErro }) {
     <>
     {fora.length > 0 && <p className="note">{fora.length} {fora.length === 1 ? "item fora" : "itens fora"} do rancho ({brl(fora.reduce((s, l) => s + l.valor_total, 0))}): guardados na compra, sem contar no total.</p>}
     <div className="tablewrap"><table className="revisao">
-      <thead><tr><th /><th>Item</th><th>Marca</th><th>Embalagem</th><th className="r">Qtd</th><th className="r">R$ unit.</th><th className="r">Desc.</th><th className="r">Total</th><th /></tr></thead>
+      <thead><tr><th /><th>Item</th><th>Marca · embalagem</th><th className="r">Qtd × R$ unit.</th><th className="r">Desc.</th><th className="r">Total</th><th /></tr></thead>
       <tbody>{linhas.map((l) => (
         <tr key={l.id} className={l.fora_rancho ? "fora" : ""}>
           <td className="acao"><button className="btn ghost" style={{ whiteSpace: "nowrap" }} onClick={() => alternarFora(l)} disabled={ocupado}>
             {l.fora_rancho ? "Contar de novo" : "Fora do rancho"}</button></td>
           <td>{prod.get(l.produto_id)?.nome}{l.fora_rancho && <div className="note">fora do rancho</div>}</td>
-          <td>{l.marca ?? ""}</td>
-          <td>{l.embalagem ?? ""}</td>
-          <td className="r num">{num(l.quantidade)}</td>
-          <td className="r money">{brl(l.valor_unitario)}</td>
-          <td className="r money">{brl(l.desconto)}</td>
+          <td>{[l.marca, l.embalagem].filter(Boolean).join(" · ") || "—"}</td>
+          <td className="r money">{num(l.quantidade)} × {brl(l.valor_unitario)}</td>
+          <td className="r money">{l.desconto > 0 ? "− " + brl(l.desconto) : "—"}</td>
           <td className="r money">{brl(l.valor_total)}</td>
           <td className="r">{excluindo === l.id
             ? <span className="row" style={{ justifyContent: "flex-end" }}>

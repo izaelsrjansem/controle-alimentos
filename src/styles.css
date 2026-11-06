@@ -210,20 +210,20 @@ code{font-family:var(--font-mono);font-size:.85em;color:var(--accent)}
 
 /* compras do mês viram cartões no celular */
 @media (max-width:720px){
-  table.compras thead{display:none}
-  table.compras tr:not(.detalhe){display:grid;grid-template-columns:1fr auto;grid-template-areas:"d p" "m m" "i x" "a a";gap:6px 12px;padding:12px 4px;border-bottom:1px solid var(--line)}
-  table.compras tr:not(.detalhe) td{border:0;padding:0;background:none}
-  table.compras td:nth-child(1){grid-area:d;color:var(--accent)}
-  table.compras td:nth-child(2){grid-area:m}
-  table.compras td:nth-child(3){grid-area:i;text-align:left}
-  table.compras td:nth-child(3)::before{content:"Itens ";font-family:var(--font-mono);font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-  table.compras td:nth-child(4){grid-area:x}
-  table.compras td:nth-child(4)::before{content:"Desc. ";font-family:var(--font-mono);font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-  table.compras td:nth-child(5){grid-area:p;font-size:1.05rem}
-  table.compras td:nth-child(6){grid-area:a}
-  table.compras td:nth-child(6) .row{justify-content:space-between!important}
-  table.compras tr.duvida{background:var(--warn-soft);border-radius:10px;padding-inline:10px}
-  table.compras tr.detalhe td{display:block;padding:0 0 12px;border-bottom:1px solid var(--line)}
+  table.compras > thead{display:none}
+  table.compras > tbody > tr:not(.detalhe){display:grid;grid-template-columns:1fr auto;grid-template-areas:"d p" "m m" "i x" "a a";gap:6px 12px;padding:12px 4px;border-bottom:1px solid var(--line)}
+  table.compras > tbody > tr:not(.detalhe) > td{border:0;padding:0;background:none}
+  table.compras > tbody > tr:not(.detalhe) > td:nth-child(1){grid-area:d;color:var(--accent)}
+  table.compras > tbody > tr:not(.detalhe) > td:nth-child(2){grid-area:m}
+  table.compras > tbody > tr:not(.detalhe) > td:nth-child(3){grid-area:i;text-align:left}
+  table.compras > tbody > tr:not(.detalhe) > td:nth-child(3)::before{content:"Itens ";font-family:var(--font-mono);font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  table.compras > tbody > tr:not(.detalhe) > td:nth-child(4){grid-area:x}
+  table.compras > tbody > tr:not(.detalhe) > td:nth-child(4)::before{content:"Desc. ";font-family:var(--font-mono);font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  table.compras > tbody > tr:not(.detalhe) > td:nth-child(5){grid-area:p;font-size:1.05rem}
+  table.compras > tbody > tr:not(.detalhe) > td:nth-child(6){grid-area:a}
+  table.compras > tbody > tr:not(.detalhe) > td:nth-child(6) .row{justify-content:space-between!important}
+  table.compras > tbody > tr.duvida{background:var(--warn-soft);border-radius:10px;padding-inline:10px}
+  table.compras > tbody > tr.detalhe > td{display:block;padding:0 0 12px;border-bottom:1px solid var(--line)}
 }
 
 /* ---------- tema claro (dia) ---------- */
@@ -602,20 +602,43 @@ body{background-image:var(--padrao),radial-gradient(900px 500px at 85% -10%,var(
 @media (max-width:720px){
   #compras-do-mes .tablewrap{overflow:visible}
   table.compras{border-collapse:separate;border-spacing:0}
-  table.compras tbody{display:flex;flex-direction:column;gap:12px}
-  table.compras tr:not(.detalhe){position:relative;padding:14px 16px;border:1px solid var(--line-strong)!important;border-radius:16px;overflow:hidden;
+  table.compras > tbody{display:flex;flex-direction:column;gap:12px}
+  table.compras > tbody > tr:not(.detalhe){position:relative;padding:14px 16px;border:1px solid var(--line-strong)!important;border-radius:16px;overflow:hidden;
     background:linear-gradient(145deg,rgba(255,255,255,.09),rgba(255,255,255,.02) 55%),var(--surface);
     backdrop-filter:blur(16px) saturate(140%);-webkit-backdrop-filter:blur(16px) saturate(140%);
     box-shadow:0 10px 26px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.12)}
-  table.compras tr:not(.detalhe)::before{content:"";position:absolute;inset:0 0 auto;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));opacity:.75}
-  :root[data-theme="claro"] table.compras tr:not(.detalhe){background:linear-gradient(145deg,rgba(255,255,255,.95),rgba(255,255,255,.65)),var(--surface);box-shadow:0 8px 22px rgba(15,40,80,.1),inset 0 1px 0 #fff}
-  table.compras tr:not(.detalhe):hover td{background:none}
-  table.compras td:nth-child(5){font-size:1.2rem;color:var(--accent)}
-  table.compras td:nth-child(5) b{font-weight:700}
-  table.compras td:nth-child(2){font-weight:600}
-  table.compras td:nth-child(2) .note{font-weight:450}
-  table.compras td:nth-child(6){padding-top:6px!important;margin-top:4px;border-top:1px dashed var(--line)!important}
-  table.compras tr.duvida{background:var(--warn-soft)!important;border-color:rgb(251 191 36 / .55)!important}
-  table.compras tr.detalhe td{border:0;padding:0}
-  table.compras tr.detalhe > td > *{margin-top:-4px}
+  table.compras > tbody > tr:not(.detalhe)::before{content:"";position:absolute;inset:0 0 auto;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));opacity:.75}
+  :root[data-theme="claro"] table.compras > tbody > tr:not(.detalhe){background:linear-gradient(145deg,rgba(255,255,255,.95),rgba(255,255,255,.65)),var(--surface);box-shadow:0 8px 22px rgba(15,40,80,.1),inset 0 1px 0 #fff}
+  table.compras > tbody > tr:not(.detalhe):hover > td{background:none}
+  table.compras > tbody > tr:not(.detalhe) > td:nth-child(5){font-size:1.2rem;color:var(--accent)}
+  table.compras > tbody > tr:not(.detalhe) > td:nth-child(5) b{font-weight:700}
+  table.compras > tbody > tr:not(.detalhe) > td:nth-child(2){font-weight:600}
+  table.compras > tbody > tr:not(.detalhe) > td:nth-child(2) .note{font-weight:450}
+  table.compras > tbody > tr:not(.detalhe) > td:nth-child(6){padding-top:6px!important;margin-top:4px;border-top:1px dashed var(--line)!important}
+  table.compras > tbody > tr.duvida{background:var(--warn-soft)!important;border-color:rgb(251 191 36 / .55)!important}
+  table.compras > tbody > tr.detalhe > td{border:0;padding:0}
+  table.compras > tbody > tr.detalhe > td > *{margin-top:-4px}
+}
+
+/* ---------- itens de uma compra (Ver itens): cada item num cartãozinho no celular ---------- */
+.revisao tr.fora td{opacity:1}
+.revisao tr.fora td:not(.acao):not(:last-child){opacity:.45}
+.revisao tr.fora td:last-child,.revisao tr.fora td.acao{opacity:1}
+@media (max-width:720px){
+  tr.detalhe .tablewrap{overflow:visible}
+  tr.detalhe table.revisao > thead{display:none}
+  tr.detalhe table.revisao > tbody{display:flex;flex-direction:column;gap:10px;padding:4px 0 6px}
+  tr.detalhe table.revisao > tbody > tr{display:grid;grid-template-columns:1fr auto;grid-template-areas:"n t" "m m" "q x" "a e";gap:6px 10px;
+    padding:12px 14px;border-radius:14px;border:1px solid var(--line-strong);background:var(--surface);box-shadow:0 6px 16px rgba(0,0,0,.12)}
+  :root[data-theme="claro"] tr.detalhe table.revisao > tbody > tr{background:#fff}
+  tr.detalhe table.revisao > tbody > tr > td{border:0;padding:0;background:none!important;text-align:left}
+  tr.detalhe table.revisao > tbody > tr > td:nth-child(1){grid-area:a;align-self:center}
+  tr.detalhe table.revisao > tbody > tr > td:nth-child(2){grid-area:n;font-weight:600;font-size:1rem}
+  tr.detalhe table.revisao > tbody > tr > td:nth-child(3){grid-area:m;color:var(--muted);font-size:.85rem}
+  tr.detalhe table.revisao > tbody > tr > td:nth-child(4){grid-area:q;color:var(--muted);font-size:.85rem}
+  tr.detalhe table.revisao > tbody > tr > td:nth-child(5){grid-area:x;color:var(--good);font-size:.85rem;text-align:right}
+  tr.detalhe table.revisao > tbody > tr > td:nth-child(6){grid-area:t;font-size:1.05rem;font-weight:700;color:var(--accent);text-align:right}
+  tr.detalhe table.revisao > tbody > tr > td:nth-child(7){grid-area:e;align-self:center;text-align:right}
+  tr.detalhe table.revisao > tbody > tr > td:nth-child(7) .row{justify-content:flex-end!important;flex-wrap:nowrap}
+  tr.detalhe table.revisao > tbody > tr.fora{border-style:dashed}
 }
