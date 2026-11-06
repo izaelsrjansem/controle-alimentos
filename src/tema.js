@@ -52,7 +52,7 @@ export function gerarFundo(figuras, cor, opacidade = 0.13, escala = 1) {
 // [chave, nome, descrição, [cor1, cor2], figuras]
 export const PALETAS = [
   ["limpo", "Sem tema", "Tela limpa, sem desenhos", ["#818cf8", "#94a3b8"], []],
-  ["padrao", "Padrão", "Ciano e violeta, grade técnica", ["#22d3ee", "#a78bfa"], []],
+  ["padrao", "Padrão", "Ciano suave, cor única e limpa", ["#22d3ee", "#a5f3fc"], []],
   ["masculino", "Masculino", "Azul-marinho e grafite, cores sólidas; carrinho, cupom, cifrão", ["#60a5fa", "#94a3b8"], ["carrinho", "cupom", "cifrao", "grafico", "sacola", "moeda"]],
   ["feminino", "Feminino", "Rosa e lilás; morango, flor, cupcake", ["#f472b6", "#c084fc"], ["morango", "flor", "cupcake", "coracao", "uva", "estrela"]],
   ["feira", "Feira", "Verde e laranja; frutas e legumes", ["#4ade80", "#fb923c"], ["maca", "cenoura", "banana", "folha", "uva", "tomate"]],

@@ -665,3 +665,29 @@ body{background-image:var(--padrao),radial-gradient(900px 500px at 85% -10%,var(
 .grupo-lista > .lbl::before,.grupo-lista > .lbl::after{content:"";flex:1 1 auto;max-width:48px;height:1px;background:linear-gradient(90deg,transparent,rgb(var(--acc-rgb) / .7))}
 .grupo-lista > .lbl::after{background:linear-gradient(90deg,rgb(var(--acc2-rgb) / .7),transparent)}
 :root[data-theme="claro"] .grupo-lista > .lbl{color:#0b1324;background:linear-gradient(90deg,rgba(255,255,255,.5),rgb(var(--acc-rgb) / .16) 30%,rgb(var(--acc2-rgb) / .16) 70%,rgba(255,255,255,.5))}
+
+/* ---------- Padrão: uma cor só (ciano), sólida, suave e transparente; sem degradês, brilhos nem grade ---------- */
+:root[data-paleta="padrao"]{--acc2-rgb:var(--acc-rgb); --brilho1:transparent; --brilho2:transparent; --bg:#0a0f1a;
+  --glow:0 0 0 1px rgb(var(--acc-rgb) / .25)}
+:root[data-theme="claro"][data-paleta="padrao"]{--acc2-rgb:var(--acc-rgb); --bg:#f3f6f9; --glow:0 0 0 1px rgb(var(--acc-rgb) / .22)}
+:root[data-paleta="padrao"] body::after{display:none}
+:root[data-paleta="padrao"] :is(button.btn,a.btn,label.btn):not(.ghost):not(.perigo),:root[data-paleta="padrao"] .origem.principal{
+  background:rgb(var(--acc-rgb) / .18);color:var(--accent);border:1px solid rgb(var(--acc-rgb) / .35);box-shadow:none;filter:none}
+:root[data-paleta="padrao"] :is(button.btn,a.btn,label.btn):not(.ghost):not(.perigo):hover{background:rgb(var(--acc-rgb) / .26)}
+:root[data-paleta="padrao"] .origem.principal :is(svg,small){color:var(--accent)}
+:root[data-paleta="padrao"] .kpi.main{background:rgb(var(--acc-rgb) / .08)!important;border-color:rgb(var(--acc-rgb) / .3);box-shadow:none}
+:root[data-paleta="padrao"] .kpi.main::after,:root[data-paleta="padrao"] .cartao::after{display:none}
+:root[data-paleta="padrao"] .kpi.main .money{color:var(--fg);text-shadow:none}
+:root[data-paleta="padrao"] .bar .fill{background:rgb(var(--acc-rgb) / .55);box-shadow:none}
+:root[data-paleta="padrao"] :is(.cartao,.panel,table.compras > tbody > tr:not(.detalhe))::before{background:rgb(var(--acc-rgb) / .35)!important;opacity:1}
+:root[data-paleta="padrao"] h2::before{background:rgb(var(--acc-rgb) / .6);box-shadow:none}
+:root[data-paleta="padrao"] :is(nav.tabs,header.top)::after{background:rgb(var(--acc-rgb) / .25);opacity:1}
+:root[data-paleta="padrao"] nav.tabs button[aria-selected="true"]{box-shadow:none}
+:root[data-paleta="padrao"] nav.tabs button[aria-selected="true"] svg{filter:none}
+:root[data-paleta="padrao"] .cartao{background:var(--surface)}
+:root[data-theme="claro"][data-paleta="padrao"] .cartao,:root[data-theme="claro"][data-paleta="padrao"] table.compras > tbody > tr:not(.detalhe){background:rgba(255,255,255,.85)}
+:root[data-paleta="padrao"] .grupo-lista > .lbl{background:rgb(var(--acc-rgb) / .08);border-color:rgb(var(--acc-rgb) / .22);box-shadow:none}
+:root[data-paleta="padrao"] .grupo-lista > .lbl::before,:root[data-paleta="padrao"] .grupo-lista > .lbl::after{background:rgb(var(--acc-rgb) / .4)}
+:root[data-paleta="padrao"] .logo svg{filter:none}
+:root[data-paleta="padrao"] .secao.aberta,:root[data-paleta="padrao"] .exportar{box-shadow:none}
+:root[data-paleta="padrao"] .cartao-preco .money,:root[data-paleta="padrao"] .it .pr .money{text-shadow:none}
