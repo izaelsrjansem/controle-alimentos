@@ -708,3 +708,53 @@ body{background-image:var(--padrao),radial-gradient(900px 500px at 85% -10%,var(
 :root[data-paleta="padrao"] .origem.principal :is(svg,small,b){color:#fff}
 :root[data-paleta="padrao"] .kpi.main{background:rgb(var(--acc-rgb) / .1)!important}
 :root[data-paleta="padrao"] .tag{background:rgb(var(--acc-rgb) / .1);color:var(--accent);border-color:rgb(var(--acc-rgb) / .25)}
+
+/* ======================================================================
+   Sem tema e Padrão: visual limpo, vidro jateado com relevo, sem bordas,
+   sem luzinhas, degradês ou detalhes coloridos.
+   Sem tema = nenhuma cor (tons de cinza). Padrão = azul-marinho, fundo levemente azulado.
+   ====================================================================== */
+:root[data-paleta="limpo"]{--acc-rgb:229 231 235; --acc2-rgb:229 231 235; --bg:#121417; --fg:#f5f6f7; --muted:#b4b9c0}
+:root[data-theme="claro"][data-paleta="limpo"]{--acc-rgb:17 24 39; --acc2-rgb:17 24 39; --bg:#e9ebee; --fg:#0a0a0a; --muted:#3a3f47}
+:root[data-paleta="padrao"]{--bg:#0b1220}
+:root[data-theme="claro"][data-paleta="padrao"]{--bg:#edf1f7}
+:root:is([data-paleta="limpo"],[data-paleta="padrao"]){--brilho1:transparent; --brilho2:transparent; --padrao:none;
+  --vidro-bg:rgba(255,255,255,.06); --relevo:inset 0 1px 0 rgba(255,255,255,.08),0 8px 22px rgba(0,0,0,.35),0 1px 3px rgba(0,0,0,.4)}
+:root[data-theme="claro"]:is([data-paleta="limpo"],[data-paleta="padrao"]){
+  --vidro-bg:rgba(255,255,255,.62); --relevo:inset 0 1px 0 rgba(255,255,255,.9),0 8px 22px rgba(15,23,42,.08),0 1px 3px rgba(15,23,42,.08)}
+/* fundo liso e sem efeitos */
+:root:is([data-paleta="limpo"],[data-paleta="padrao"]) body::after{display:none}
+:root:is([data-paleta="limpo"],[data-paleta="padrao"]) :is(.cartao,.panel,.kpi,.secao,.tema,.origem,.meu-tema,table.compras > tbody > tr:not(.detalhe),.grupo-lista > .lbl,header.top,nav.tabs)::before,
+:root:is([data-paleta="limpo"],[data-paleta="padrao"]) :is(.cartao,.panel,.kpi,.kpi.main,.grupo-lista > .lbl,header.top,nav.tabs)::after{display:none!important}
+:root:is([data-paleta="limpo"],[data-paleta="padrao"]) h2::before{display:none}
+/* vidro jateado com relevo, sem borda */
+:root:is([data-paleta="limpo"],[data-paleta="padrao"]) :is(.cartao,.panel,.kpi,.kpi.main,.secao,.tema,.origem,.resumo-fixo,.exportar,table.compras > tbody > tr:not(.detalhe),tr.detalhe table.revisao > tbody > tr,.grupo-lista > .lbl){
+  background:var(--vidro-bg)!important;border:0!important;box-shadow:var(--relevo)!important;
+  backdrop-filter:blur(18px) saturate(120%);-webkit-backdrop-filter:blur(18px) saturate(120%)}
+:root:is([data-paleta="limpo"],[data-paleta="padrao"]) .secao-corpo > .panel{background:none!important;box-shadow:none!important;backdrop-filter:none;-webkit-backdrop-filter:none}
+:root:is([data-paleta="limpo"],[data-paleta="padrao"]) :is(header.top,nav.tabs){background:var(--vidro-bg)!important;border:0!important;box-shadow:var(--relevo)}
+:root:is([data-paleta="limpo"],[data-paleta="padrao"]) .grupo-lista > .lbl{color:var(--fg)}
+:root:is([data-paleta="limpo"],[data-paleta="padrao"]) .kpi.main .money{color:var(--fg);text-shadow:none}
+:root:is([data-paleta="limpo"],[data-paleta="padrao"]) .logo svg,:root:is([data-paleta="limpo"],[data-paleta="padrao"]) nav.tabs svg{filter:none}
+:root:is([data-paleta="limpo"],[data-paleta="padrao"]) nav.tabs button[aria-selected="true"]{background:rgb(var(--acc-rgb) / .1);border-color:transparent;box-shadow:none}
+/* botões e barras em cor sólida */
+:root:is([data-paleta="limpo"],[data-paleta="padrao"]) :is(button.btn,a.btn,label.btn):not(.ghost):not(.perigo),
+:root:is([data-paleta="limpo"],[data-paleta="padrao"]) .origem.principal{background:var(--accent)!important;color:#fff!important;border:0;box-shadow:var(--relevo)!important}
+:root:is([data-paleta="limpo"],[data-paleta="padrao"]) .origem.principal :is(svg,small,b){color:#fff}
+:root:is([data-paleta="limpo"],[data-paleta="padrao"]) :is(button.btn.ghost,a.btn.ghost,label.btn.ghost,.mesnav button,.chip){background:var(--vidro-bg);border-color:transparent;box-shadow:var(--relevo)}
+:root:is([data-paleta="limpo"],[data-paleta="padrao"]) .bar .fill{background:var(--accent);box-shadow:none}
+:root:is([data-paleta="limpo"],[data-paleta="padrao"]) .bar .track{background:rgb(var(--acc-rgb) / .1)}
+
+/* Sem tema: nenhuma cor (logomarca, marcações, etiquetas e valores em tons de cinza) */
+:root[data-paleta="limpo"] :is(.logo svg,.tela-bloqueio .tocar-centro > svg:first-child){filter:grayscale(1)}
+:root[data-paleta="limpo"]:not([data-theme="claro"]) :is(button.btn,a.btn,label.btn):not(.ghost):not(.perigo),
+:root[data-paleta="limpo"]:not([data-theme="claro"]) .origem.principal,:root[data-paleta="limpo"]:not([data-theme="claro"]) .origem.principal :is(svg,small,b){color:#111!important}
+:root[data-paleta="limpo"] :is(.money,.num,.cartao-preco .money,.it .pr .money,.tag,.tag.good,.tag.bad,code,.carregando,.sair:hover,.lbl){color:var(--fg)}
+:root[data-paleta="limpo"] .tag,:root[data-paleta="limpo"] .tag.good,:root[data-paleta="limpo"] .tag.bad{background:rgb(var(--acc-rgb) / .08);border-color:transparent}
+:root[data-paleta="limpo"] .chips{border-color:rgb(var(--acc-rgb) / .2)}
+:root[data-paleta="limpo"] .chips button[aria-pressed="true"]:is([data-s="tenho"],[data-s="acabando"],[data-s="comprar"]){background:var(--accent);color:var(--bg);font-weight:700}
+:root[data-paleta="limpo"] .cartao[data-s]::before{display:none}
+:root[data-paleta="limpo"] .ok{background:rgb(var(--acc-rgb) / .08);color:var(--fg);border-color:transparent}
+:root[data-paleta="limpo"] .status .pulso{background:var(--muted);box-shadow:none}
+:root[data-paleta="limpo"] .carregando::before{background:var(--fg);box-shadow:none}
+:root[data-paleta="limpo"] td.best{background:rgb(var(--acc-rgb) / .1);color:var(--fg)}

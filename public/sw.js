@@ -1,6 +1,6 @@
 // Service worker: deixa o app instalável e abre a casca do app mesmo com internet ruim.
 // Os dados (Supabase) nunca passam pelo cache: sempre vêm da rede.
-const CACHE = "despensa-v4";
+const CACHE = "despensa-v5";
 const CASCA = ["/", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (e) => {

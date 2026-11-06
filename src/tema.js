@@ -51,8 +51,8 @@ export function gerarFundo(figuras, cor, opacidade = 0.13, escala = 1) {
 /* ---------- Temas prontos ---------- */
 // [chave, nome, descrição, [cor1, cor2], figuras]
 export const PALETAS = [
-  ["limpo", "Sem tema", "Tela limpa, sem desenhos", ["#818cf8", "#94a3b8"], []],
-  ["padrao", "Padrão", "Azul-marinho sólido, sem efeitos", ["#1e3a8a", "#6e96dc"], []],
+  ["limpo", "Sem tema", "Nenhuma cor: cinza, letras pretas, vidro jateado", ["#1f2937", "#d1d5db"], []],
+  ["padrao", "Padrão", "Azul-marinho, fundo levemente azulado, vidro jateado", ["#1e3a8a", "#6e96dc"], []],
   ["masculino", "Masculino", "Azul-marinho e grafite, cores sólidas; carrinho, cupom, cifrão", ["#60a5fa", "#94a3b8"], ["carrinho", "cupom", "cifrao", "grafico", "sacola", "moeda"]],
   ["feminino", "Feminino", "Rosa e lilás; morango, flor, cupcake", ["#f472b6", "#c084fc"], ["morango", "flor", "cupcake", "coracao", "uva", "estrela"]],
   ["feira", "Feira", "Verde e laranja; frutas e legumes", ["#4ade80", "#fb923c"], ["maca", "cenoura", "banana", "folha", "uva", "tomate"]],
