@@ -757,3 +757,9 @@ body{background-image:var(--padrao),radial-gradient(900px 500px at 85% -10%,var(
 :root[data-paleta="limpo"] .status .pulso{background:var(--muted);box-shadow:none}
 :root[data-paleta="limpo"] .carregando::before{background:var(--fg);box-shadow:none}
 :root[data-paleta="limpo"] td.best{background:rgb(var(--acc-rgb) / .1);color:var(--fg)}
+
+/* Tirar foto (botão principal) nos temas limpos: cor sólida, ícone e texto visíveis (mais forte que a regra do vidro) */
+:root:is([data-paleta="limpo"],[data-paleta="padrao"]) .origens > label.origem.principal{background:var(--accent)!important;color:#fff!important}
+:root:is([data-paleta="limpo"],[data-paleta="padrao"]) .origens > label.origem.principal :is(svg,b,small){color:#fff!important}
+:root[data-paleta="limpo"]:not([data-theme="claro"]) .origens > label.origem.principal,
+:root[data-paleta="limpo"]:not([data-theme="claro"]) .origens > label.origem.principal :is(svg,b,small){color:#111!important}
