@@ -698,7 +698,6 @@ body{background-image:var(--padrao),radial-gradient(900px 500px at 85% -10%,var(
 :root[data-paleta="padrao"] :is(.cartao,.panel,.kpi,.secao,table.compras > tbody > tr:not(.detalhe))::before{display:none!important}
 :root[data-paleta="padrao"] :is(.cartao,.kpi.main,.panel)::after{display:none!important}
 :root[data-paleta="padrao"] .cartao{background:var(--surface)!important;backdrop-filter:none;-webkit-backdrop-filter:none}
-:root[data-theme="claro"][data-paleta="padrao"] :is(.cartao,.panel,.kpi,.secao,table.compras > tbody > tr:not(.detalhe)){background:#fff!important;box-shadow:0 1px 3px rgba(15,23,42,.08)}
 :root[data-paleta="padrao"] .grupo-lista > .lbl{background:rgb(var(--acc-rgb) / .1)!important;border-color:rgb(var(--acc-rgb) / .25);color:var(--fg);backdrop-filter:none;-webkit-backdrop-filter:none}
 :root[data-paleta="padrao"] .grupo-lista > .lbl::before,:root[data-paleta="padrao"] .grupo-lista > .lbl::after{display:none}
 :root[data-paleta="padrao"] :is(nav.tabs,header.top)::after{display:none}
